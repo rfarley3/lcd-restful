@@ -15,15 +15,17 @@ class Lcd(AdaLcd):
     }
 
     def __init__(self, config={}):
+        self.config.update(config)
         super(Lcd, self).__init__(
-            config.get('rs', self.config['rs']),
-            config.get('en', self.config['en']),
-            config.get('d4', self.config['d4']),
-            config.get('d5', self.config['d5']),
-            config.get('d6', self.config['d6']),
-            config.get('d7', self.config['d7']),
-            config.get('cols', self.config.get('cols', 20)),
-            config.get('rows', self.config.get('rows', 4)),
-            backlight=config.get('backlight'),
-            gpio=config.get('gpio'),
-            pwm=config.get('pwm'))
+            self.config['rs'],
+            self.config['en'],
+            self.config['d4'],
+            self.config['d5'],
+            self.config['d6'],
+            self.config['d7'],
+            self.config['cols'],
+            self.config['rows'],
+            backlight=self.config.get('backlight'),
+            gpio=self.config.get('gpio'),
+            pwm=self.config.get('pwm'))
+
