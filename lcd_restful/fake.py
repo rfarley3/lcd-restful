@@ -2,11 +2,12 @@ from .lcd import Lcd
 
 
 class FakeHw(object):
-    def __init__(self, rows=4, cols=20):
+    def __init__(self, rows=4, cols=20, on_refresh=None):
         self.cur_c = 0
         self.cur_r = 0
         self.rows = rows
         self.cols = cols
+        self.on_refresh = on_refresh
         self.clear()
 
     def clear(self):
@@ -38,12 +39,14 @@ class FakeHw(object):
     def write_chr(self, character):
         self.cells[self.cur_r][self.cur_c] = character
         self.cur_c += 1
+        if self.on_refresh is not None:
+            self.on_refresh()
         # print('[%s,%s]%s;' % (self.cur_r, self.cur_c, character), end='')
 
 
 class FakeGpio(object):
-    def __init__(self):
-        self.hw = FakeHw()
+    def __init__(self, on_refresh=None):
+        self.hw = FakeHw(on_refresh=on_refresh)
         self.in_chr_mode = -1
         self.lower = {}
         self.upper = {}
@@ -90,7 +93,7 @@ class FakeGpio(object):
 
 class FakeLcd(Lcd):
     def __init__(self, config={}):
-        self.fake_gpio = FakeGpio()
+        self.fake_gpio = FakeGpio(on_refresh=self.on_refresh)
         config.update({'gpio': self.fake_gpio})
         super(FakeLcd, self).__init__(config)
         self.fake_gpio.set_pins(self.config)
@@ -106,19 +109,19 @@ class FakeLcd(Lcd):
         self.fake_gpio.hw.set_cursor(col, row)  # TODO catch at gpio
         super(FakeLcd, self).set_cursor(col, row)
 
-    def message(self, text):
-        super(FakeLcd, self).message(text)
-        self.refresh()
+    # def message(self, text):
+    #     super(FakeLcd, self).message(text)
+    #     self.refresh()
 
     def move_right(self):
         self.fake_gpio.hw.mv_right()  # TODO catch at gpio
-        self.refresh()
+        self.on_refresh()
 
     def move_left(self):
         self.fake_gpio.hw.mv_left()  # TODO catch at gpio
-        self.refresh()
+        self.on_refresh()
 
-    def refresh(self):
+    def on_refresh(self):
         for r in range(self.config['rows']):
             print('\b' * self.config['cols'], end='')
             print(' ' * self.config['cols'], end='')
