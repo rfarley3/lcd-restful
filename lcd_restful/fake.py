@@ -40,8 +40,13 @@ class FakeHw(object):
         self.cells[self.cur_r][self.cur_c] = character
         self.cur_c += 1
         if self.on_refresh is not None:
-            self.on_refresh()
+            self.on_refresh(self)
         # print('[%s,%s]%s;' % (self.cur_r, self.cur_c, character), end='')
+
+    def write8(self, vals):
+        # TODO process commands
+        # LCD_CLEARDISPLAY clear display
+        pass
 
 
 class FakeGpio(object):
@@ -62,6 +67,7 @@ class FakeGpio(object):
 
     def output_pins(self, vals):
         if self.in_chr_mode == -1:
+            self.hw.write8(vals)
             return
         elif self.in_chr_mode == 0:
             self.upper = vals
@@ -121,13 +127,16 @@ class FakeLcd(Lcd):
         self.fake_gpio.hw.mv_left()  # TODO catch at gpio
         self.on_refresh()
 
-    def on_refresh(self):
+    def on_refresh(self, lcd_map=None):
         for r in range(self.config['rows']):
             print('\b' * self.config['cols'], end='')
             print(' ' * self.config['cols'], end='')
             print('\033[A', end='')
         print('\b' * self.config['cols'], end='')
-        print(self.fake_gpio.hw)
+        # TODO remove after remove all self.fake_gpio.hw calls
+        if lcd_map is None:
+            lcd_map = self.fake_gpio.hw
+        print(lcd_map)
 
     # def write8(self, val, chr_mode=False):
     #     if chr_mode:
