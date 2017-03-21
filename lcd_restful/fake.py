@@ -6,24 +6,42 @@ from Adafruit_CharLCD import (
 
 
 class FakeHw(object):
-    def __init__(self, rows=4, cols=20, on_refresh=None):
+    def __init__(self, rows=4, cols=20):
         self.rs = False
         self.write4_1 = True
         self.cur_c = 0
         self.cur_r = 0
         self.rows = rows
         self.cols = cols
-        self.on_refresh = on_refresh
+        self.cells = {}
+        for r in range(self.rows):
+            self.cells[r] = {}
+        print(self)  # initialize the screen area
         self.clear()
 
     def __str__(self):
         lcd_str = ''
+        lcd_str += '-' * (self.cols + 2) + '\n'
         for r in range(self.rows):
-            r_str = ''
+            r_str = '-'
             for c in range(self.cols):
                 r_str += self.cells[r].get(c, ' ')
-            lcd_str += r_str + '\n'
-        return lcd_str[:-1]
+            lcd_str += r_str + '-\n'
+        lcd_str += '-' * (self.cols + 2)
+        return lcd_str
+
+    def del_str(self):
+        tot_r = self.rows + 2
+        tot_c = self.cols + 2
+        for r in range(tot_r):
+            print('\b' * tot_c, end='')
+            print(' ' * tot_c, end='')
+            print('\033[A', end='')
+        print('\b' * tot_c, end='')
+
+    def on_refresh(self):
+        self.del_str()
+        print(self)
 
     def write4(self, d4, d5, d6, d7):
         if self.write4_1:
@@ -42,8 +60,7 @@ class FakeHw(object):
     def write8_chr(self, character):
         self.cells[self.cur_r][self.cur_c] = character
         self.cur_c += 1
-        if self.on_refresh is not None:
-            self.on_refresh(self)
+        self.on_refresh()
 
     def write8_cmd(self, val):
         # LCD_CLEARDISPLAY
@@ -89,6 +106,7 @@ class FakeHw(object):
         self.cells = {}
         for r in range(self.rows):
             self.cells[r] = {}
+        self.on_refresh()
 
     def set_cursor(self, col, row):
         self.cur_c = col
@@ -121,8 +139,7 @@ class FakeHw(object):
                 if (c - 1) in self.cells[r]:
                     new_r[c] = self.cells[r][c - 1]
             self.cells[r] = new_r
-        if self.on_refresh is not None:
-            self.on_refresh(self)
+        self.on_refresh()
 
     def move_left(self):
         for r in self.cells.keys():
@@ -132,13 +149,12 @@ class FakeHw(object):
                 if c in self.cells[r] and (c - 1) >= 0:
                     self.cells[r][c - 1] = self.cells[r][c]
                     del self.cells[r][c]
-        if self.on_refresh is not None:
-            self.on_refresh(self)
+        self.on_refresh()
 
 
 class FakeGpio(object):
-    def __init__(self, on_refresh=None):
-        self.hw = FakeHw(on_refresh=on_refresh)
+    def __init__(self):
+        self.hw = FakeHw()
         # bc set_pins is called after Lcd.init, rs isn't set
         # when Lcd.init calls self.clear. you can't intercept it.
         self._d4 = None
@@ -176,22 +192,13 @@ class FakeGpio(object):
             pinnums_to_bools[self._d7])
 
 
-class FakeLcd(Lcd):
+class FakeLcdApi(Lcd):
     def __init__(self, config={}):
-        self.fake_gpio = FakeGpio(on_refresh=self.on_refresh)
+        self.fake_gpio = FakeGpio()
         config.update({'gpio': self.fake_gpio})
-        super(FakeLcd, self).__init__(config)
+        super(FakeLcdApi, self).__init__(config)
+        # pins are set by Lcd.__init__, so have to wait until now to set them within FakeGpio
         self._gpio.set_pins(self.config)
-        print(self._gpio.hw)
 
     def _pulse_enable(self):
         pass
-
-    def on_refresh(self, lcd_map=None, self_delete=True):
-        if self_delete:
-            for r in range(self.config['rows']):
-                print('\b' * self.config['cols'], end='')
-                print(' ' * self.config['cols'], end='')
-                print('\033[A', end='')
-            print('\b' * self.config['cols'], end='')
-        print(lcd_map)

@@ -2,14 +2,17 @@
 import sys
 import time
 # from lcd_restful.lcd import Lcd
-from lcd_restful.fake import FakeLcd as Lcd
+from lcd_restful.fake import FakeLcdApi as Lcd
 
 # WARNING double check pin configuration in lcd_restful.lcd
 
 def main(argv):
     lcd = Lcd()
     lcd.message('Hello\nworld!')
-    time.sleep(2.0)
+    time.sleep(1.0)
+    lcd.clear()
+    lcd.message('1' * 20 + '\n' + '2' * 20 + '\n' + '3' * 20 + '\n' + '4' * 20)
+    time.sleep(1.0)
 
     # # Demo showing the cursor.
     # lcd.clear()
