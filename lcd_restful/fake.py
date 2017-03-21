@@ -9,16 +9,15 @@ class FakeHw(object):
     def __init__(self, rows=4, cols=20):
         self.rs = False
         self.write4_1 = True
-        self.cur_c = 0
-        self.cur_r = 0
+        self.has_outputted = False
         self.rows = rows
         self.cols = cols
-        self.cells = {}
-        for r in range(self.rows):
-            self.cells[r] = {}
-        print(self)  # initialize the screen area
         self.clear()
 
+    def __repr__(self):
+        return '%s(rows=%s,cols=%s)' % (self.__class__.__name__, self.rows, self.cols)
+
+    # override if output type changes (like a file)
     def __str__(self):
         lcd_str = ''
         lcd_str += '-' * (self.cols + 2) + '\n'
@@ -30,7 +29,8 @@ class FakeHw(object):
         lcd_str += '-' * (self.cols + 2)
         return lcd_str
 
-    def del_str(self):
+    # override if output type changes (like a file)
+    def out_clear(self):
         tot_r = self.rows + 2
         tot_c = self.cols + 2
         for r in range(tot_r):
@@ -39,9 +39,16 @@ class FakeHw(object):
             print('\033[A', end='')
         print('\b' * tot_c, end='')
 
-    def on_refresh(self):
-        self.del_str()
+    # override if output type changes (like a file)
+    def out_draw(self):
         print(self)
+
+    def out_refresh(self):
+        # TODO allow refreshing single cells, or range of cells
+        if self.has_outputted:
+            self.out_clear()
+        self.out_draw()
+        self.has_outputted = True
 
     def write4(self, d4, d5, d6, d7):
         if self.write4_1:
@@ -60,7 +67,7 @@ class FakeHw(object):
     def write8_chr(self, character):
         self.cells[self.cur_r][self.cur_c] = character
         self.cur_c += 1
-        self.on_refresh()
+        self.out_refresh()
 
     def write8_cmd(self, val):
         # LCD_CLEARDISPLAY
@@ -106,7 +113,7 @@ class FakeHw(object):
         self.cells = {}
         for r in range(self.rows):
             self.cells[r] = {}
-        self.on_refresh()
+        self.out_refresh()
 
     def set_cursor(self, col, row):
         self.cur_c = col
@@ -139,7 +146,7 @@ class FakeHw(object):
                 if (c - 1) in self.cells[r]:
                     new_r[c] = self.cells[r][c - 1]
             self.cells[r] = new_r
-        self.on_refresh()
+        self.out_refresh()
 
     def move_left(self):
         for r in self.cells.keys():
@@ -149,7 +156,7 @@ class FakeHw(object):
                 if c in self.cells[r] and (c - 1) >= 0:
                     self.cells[r][c - 1] = self.cells[r][c]
                     del self.cells[r][c]
-        self.on_refresh()
+        self.out_refresh()
 
 
 class FakeGpio(object):
