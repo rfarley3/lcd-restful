@@ -1,8 +1,7 @@
 from .lcd import Lcd
 from Adafruit_CharLCD import (
-#     LCD_CLEARDISPLAY,
-#     LCD_SETDDRAMADDR,
     LCD_ROW_OFFSETS,
+    LCD_MOVERIGHT,
 )
 
 
@@ -66,7 +65,7 @@ class FakeHw(object):
             # LCD_DISPLAYMOVE
             if (val >> 3) & 0x01 == 1:
                 # auto move all text on screen one direction
-                return self.move((val & 0b00000111) == 0x04)
+                return self.move((val & 0b00000111) == LCD_MOVERIGHT)
             return self.unhandled_cmd(val)
         # LCD_DISPLAYCONTROL
         elif (val >> 3) & 0x01 == 1:

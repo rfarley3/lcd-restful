@@ -31,10 +31,10 @@ def main(argv):
     lcd.clear()
     message = 'Scroll'
     lcd.message(message)
-    for i in range(lcd._cols-len(message)):
+    for i in range(lcd._cols - len(message)):
         time.sleep(0.5)
         lcd.move_right()
-    for i in range(lcd._cols-len(message)):
+    for i in range(lcd._cols - len(message)):
         time.sleep(0.5)
         lcd.move_left()
     time.sleep(0.5)
