@@ -28,18 +28,10 @@ class FakeHw(object):
 
     def write4(self, d4, d5, d6, d7):
         if self.write4_1:
-            self.upper = (
-                d7 << 7 |
-                d6 << 6 |
-                d5 << 5 |
-                d4 << 4)
+            self.upper = (d7 << 7 | d6 << 6 | d5 << 5 | d4 << 4)
             self.write4_1 = False
             return
-        lower = (
-            d7 << 3 |
-            d6 << 2 |
-            d5 << 1 |
-            d4)
+        lower = (d7 << 3 | d6 << 2 | d5 << 1 | d4)
         val = self.upper | lower
         self.write4_1 = True
         self.upper = None
@@ -53,10 +45,44 @@ class FakeHw(object):
         self.cur_c += 1
         if self.on_refresh is not None:
             self.on_refresh(self)
-        # print('[%s,%s]%s;' % (self.cur_r, self.cur_c, character), end='')
+
+    def write8_cmd(self, val):
+        # LCD_CLEARDISPLAY
+        if val == 1:
+            return self.clear()
+        # LCD_SETDDRAMADDR
+        elif val >> 7 == 1:
+            # Set cursor pos
+            return self.cursor(val & 0b01111111)
+        # LCD_SETCGRAMADDR
+        elif (val >> 6) & 0x01 == 1:
+            # Add a custom symbol/char
+            return self.unhandled_cmd(val)  # TODO
+        # LCD_FUNCTIONSET
+        elif (val >> 5) & 0x01 == 1:
+            return self.unhandled_cmd(val)  # skip, only seen at init
+        # LCD_CURSORSHIFT
+        elif (val >> 4) & 0x01 == 1:
+            # LCD_DISPLAYMOVE
+            if (val >> 3) & 0x01 == 1:
+                # auto move all text on screen one direction
+                return self.move((val & 0b00000111) == 0x04)
+            return self.unhandled_cmd(val)
+        # LCD_DISPLAYCONTROL
+        elif (val >> 3) & 0x01 == 1:
+            # turn on and off display, show cursor, blink cursor
+            return self.unhandled_cmd(val)  # TODO
+        # LCD_ENTRYMODESET
+        elif (val >> 2) & 0x01 == 1:
+            # set which way text enters, sets autoscroll
+            return self.unhandled_cmd(val)  # skip, too complicated
+        # LCD_RETURNHOME
+        elif (val >> 1) & 0x01 == 1:
+            return self.set_cursor(0, 0)
+        raise('Unexpect command value')
 
     def unhandled_cmd(self, arg):
-        print('unhandled, but known, cmd %s' % arg)
+        raise('Unhandled, but known, cmd %s' % arg)
 
     def clear(self, *args):
         self.cur_c = 0
@@ -66,7 +92,6 @@ class FakeHw(object):
             self.cells[r] = {}
 
     def set_cursor(self, col, row):
-        # print('set cursor %s,%s' % (col, row))
         self.cur_c = col
         self.cur_r = row
 
@@ -110,36 +135,6 @@ class FakeHw(object):
                     del self.cells[r][c]
         if self.on_refresh is not None:
             self.on_refresh(self)
-
-    def write8_cmd(self, val):
-        if val & 0x01 == 1:
-            # LCD_CLEARDISPLAY
-            return self.clear()
-        elif val >> 7 == 1:
-            # LCD_SETDDRAMADDR set cursor
-            return self.cursor(val & 0b01111111)
-        elif (val >> 6) & 0x01 == 1:
-            # LCD_SETCGRAMADDR custom symbol
-            return self.unhandled_cmd(val)
-        elif (val >> 5) & 0x01 == 1:
-            # LCD_FUNCTIONSET
-            return self.unhandled_cmd(val)
-        elif (val >> 4) & 0x01 == 1:
-            # LCD_CURSORSHIFT
-            if (val >> 3) & 0x01 == 1:
-                # LCD_DISPLAYMOVE
-                return self.move((val & 0b00000111) == 0x04)
-            return self.unhandled_cmd(val)
-        elif (val >> 3) & 0x01 == 1:
-            # LCD_DISPLAYCONTROL
-            return self.unhandled_cmd(val)
-        elif (val >> 2) & 0x01 == 1:
-            # LCD_ENTRYMODESET
-            return self.unhandled_cmd(val)
-        elif (val >> 1) & 0x01 == 1:
-            # LCD_RETURNHOME
-            return self.set_cursor(0, 0)
-        raise('Unexpect command value')
 
 
 class FakeGpio(object):
@@ -193,38 +188,11 @@ class FakeLcd(Lcd):
     def _pulse_enable(self):
         pass
 
-    # def clear(self):
-    #     self._gpio.hw.clear()  # TODO catch at gpio
-
-    # def set_cursor(self, col, row):
-    #     self._gpio.hw.set_cursor(col, row)  # TODO catch at gpio
-    #     super(FakeLcd, self).set_cursor(col, row)
-
-    # def message(self, text):
-    #     super(FakeLcd, self).message(text)
-    #     # self.refresh()
-
-    # def move_right(self):
-    #     self._gpio.hw.mv_right()  # TODO catch at gpio
-    #     self.on_refresh()
-
-    # def move_left(self):
-    #     self._gpio.hw.mv_left()  # TODO catch at gpio
-    #     self.on_refresh()
-
-    def on_refresh(self, lcd_map=None, self_delete=False):
+    def on_refresh(self, lcd_map=None, self_delete=True):
         if self_delete:
             for r in range(self.config['rows']):
                 print('\b' * self.config['cols'], end='')
                 print(' ' * self.config['cols'], end='')
                 print('\033[A', end='')
             print('\b' * self.config['cols'], end='')
-        # TODO remove after remove all self.fake_gpio.hw calls
-        # if lcd_map is None:
-        #     lcd_map = self._gpio.hw
         print(lcd_map)
-
-    # def write8(self, val, chr_mode=False):
-    #     if chr_mode:
-    #         print(val)
-    #     super(FakeLcd, self).write8(val, chr_mode)
