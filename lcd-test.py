@@ -27,17 +27,17 @@ def main(argv):
     # lcd.show_cursor(False)
     # lcd.blink(False)
 
-    # # Demo scrolling message right/left.
-    # lcd.clear()
-    # message = 'Scroll'
-    # lcd.message(message)
-    # for i in range(lcd._cols-len(message)):
-    #     time.sleep(0.5)
-    #     lcd.move_right()
-    # for i in range(lcd._cols-len(message)):
-    #     time.sleep(0.5)
-    #     lcd.move_left()
-    # time.sleep(0.5)
+    # Demo scrolling message right/left.
+    lcd.clear()
+    message = 'Scroll'
+    lcd.message(message)
+    for i in range(lcd._cols-len(message)):
+        time.sleep(0.5)
+        lcd.move_right()
+    for i in range(lcd._cols-len(message)):
+        time.sleep(0.5)
+        lcd.move_left()
+    time.sleep(0.5)
 
     lcd.clear()
     lcd.message('Goodbye!')
