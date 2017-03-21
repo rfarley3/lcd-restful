@@ -1,8 +1,9 @@
 from .lcd import Lcd
-# from Adafruit_CharLCD import (
+from Adafruit_CharLCD import (
 #     LCD_CLEARDISPLAY,
-#     LCD_SETDDRAMADDR
-# )
+#     LCD_SETDDRAMADDR,
+    LCD_ROW_OFFSETS,
+)
 
 
 class FakeHw(object):
@@ -71,22 +72,35 @@ class FakeHw(object):
             self.cells[r] = {}
 
     def set_cursor(self, col, row):
+        # print('set cursor %s,%s' % (col, row))
         self.cur_c = col
         self.cur_r = row
 
     def cursor(self, arg):
         # LCD_SETDDRAMADDR | (col + LCD_ROW_OFFSETS[row]))
-        print('set cursor %s' % arg)
+        # LCD_ROW_OFFSETS         = (0x00, 0x40, 0x14, 0x54)
+        # (col + LCD_ROW_OFFSETS[row])
+        if arg >= LCD_ROW_OFFSETS[3]:
+            return self.set_cursor(LCD_ROW_OFFSETS[3] - arg, 3)
+        elif arg < LCD_ROW_OFFSETS[2]:
+            return self.set_cursor(LCD_ROW_OFFSETS[0] - arg, 0)
+        elif arg >= LCD_ROW_OFFSETS[1]:
+            return self.set_cursor(LCD_ROW_OFFSETS[1] - arg, 1)
+        elif arg >= LCD_ROW_OFFSETS[2]:
+            return self.set_cursor(LCD_ROW_OFFSETS[2] - arg, 2)
+        else:
+            raise('Bad cursor pos')
+
 
     def write8_cmd(self, val):
         if val & 0x01 == 1:
             # LCD_CLEARDISPLAY
             self.clear()
         elif val >> 7 == 1:
-            # LCD_SETDDRAMADDR
+            # LCD_SETDDRAMADDR set cursor
             self.cursor(val & 0b01111111)
         elif (val >> 6) & 0x01 == 1:
-            # LCD_SETCGRAMADDR
+            # LCD_SETCGRAMADDR custom symbol
             self.unkcmd(val)
         elif (val >> 5) & 0x01 == 1:
             # LCD_FUNCTIONSET
@@ -102,6 +116,8 @@ class FakeHw(object):
             self.unkcmd(val)
         elif (val >> 1) & 0x01 == 1:
             # LCD_RETURNHOME
+            self.set_cursor(0, 0)
+        else:
             self.unkcmd(val)
 
 
@@ -159,9 +175,9 @@ class FakeLcd(Lcd):
     # def clear(self):
     #     self._gpio.hw.clear()  # TODO catch at gpio
 
-    def set_cursor(self, col, row):
-        self._gpio.hw.set_cursor(col, row)  # TODO catch at gpio
-        super(FakeLcd, self).set_cursor(col, row)
+    # def set_cursor(self, col, row):
+    #     self._gpio.hw.set_cursor(col, row)  # TODO catch at gpio
+    #     super(FakeLcd, self).set_cursor(col, row)
 
     # def message(self, text):
     #     super(FakeLcd, self).message(text)
@@ -175,7 +191,7 @@ class FakeLcd(Lcd):
         self._gpio.hw.mv_left()  # TODO catch at gpio
         self.on_refresh()
 
-    def on_refresh(self, lcd_map=None, self_delete=False):
+    def on_refresh(self, lcd_map=None, self_delete=True):
         if self_delete:
             for r in range(self.config['rows']):
                 print('\b' * self.config['cols'], end='')
