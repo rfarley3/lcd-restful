@@ -1,6 +1,12 @@
-*.pyc
+*.py[cod]
 *~
 ._*
-*egg-info
+*.egg-info
+*.egg
 __pycache*
+env/
+build/
+dist/
+eggs/
+sdist/
 
