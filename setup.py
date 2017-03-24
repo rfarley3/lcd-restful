@@ -16,7 +16,8 @@ setup(
     install_requires=[
         'Adafruit_CharLCD',
         'requests',
-        'bottle'
+        'bottle',
+        'jsonpickle'
     ],
     entry_points={
         'console_scripts': [
