@@ -15,6 +15,8 @@ setup(
     classifiers=[],
     install_requires=[
         'Adafruit_CharLCD',
+        'requests',
+        'bottle'
     ],
     entry_points={
         'console_scripts': [

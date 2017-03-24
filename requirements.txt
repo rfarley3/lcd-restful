@@ -1,1 +1,3 @@
 Adafruit_CharLCD
+requests
+bottle
