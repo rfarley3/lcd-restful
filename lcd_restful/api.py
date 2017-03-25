@@ -21,6 +21,7 @@ def load_request(possible_keys):
     for k in possible_keys:
         if k not in pdata:
             pdata[k] = None
+    # print('pkeys: %s pdata: %s' % (possible_keys, pdata))
     return pdata
 
 
@@ -124,7 +125,7 @@ class Server(object):
         return marshall_response(success, resp)
 
     def change_settings(self):
-        req = load_request('settings')
+        req = load_request(['settings'])
         # print('req: %s' % req)
         if req['settings'] is None:
             success = False
@@ -136,7 +137,7 @@ class Server(object):
         return marshall_response(success, resp)
 
     def set_views(self):
-        req = load_request('views')
+        req = load_request(['views'])
         if req['views'] is None:
             success = False
             resp = 'No views submitted'
@@ -180,7 +181,7 @@ class Server(object):
             success = False
             resp = 'Invalid view id submitted'
             return marshall_response(success, resp)
-        req = load_request('view')
+        req = load_request(['view'])
         if req['view'] is None:
             success = False
             resp = 'No view submitted'
