@@ -15,7 +15,9 @@ from .lcd import Lcd
 
 def load_request(possible_keys):
     """Given list of possible keys, return any matching post data"""
-    pdata = json.load(request.body)
+    pdata = request.json
+    if pdata is None:
+        pdata = json.loads(request.body.getvalue().decode('utf-8'))
     for k in possible_keys:
         if k not in pdata:
             pdata[k] = None
@@ -123,6 +125,7 @@ class Server(object):
 
     def change_settings(self):
         req = load_request('settings')
+        # print('req: %s' % req)
         if req['settings'] is None:
             success = False
             resp = 'No settings submitted'
