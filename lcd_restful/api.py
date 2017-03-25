@@ -79,6 +79,9 @@ class Server(object):
         # API functions
         # v1
         get(self.url(''))(self.index)
+        get(self.url('msg'))(self.direct_msg_get)
+        put(self.url('msg') + '/<msg>')(self.direct_msg)
+        post(self.url('msg') + '/<msg>')(self.direct_msg)
         get(self.url('view'))(self.get_views_settings)
         post(self.url('view'))(self.change_settings)
         put(self.url('view'))(self.set_views)
@@ -115,6 +118,16 @@ class Server(object):
         success = True
         resp = 'LCD API is running'
         return marshall_response(success, resp)
+
+    def direct_msg_get(self):
+        # TODO return the current view's message
+        return 'yet to be coded\n'
+
+    def direct_msg(self, msg):
+        # TODO un-urlencode msg
+        # TODO some sanitizing on msg
+        self.lcd.clear()
+        self.lcd.message(msg)
 
     def get_views_settings(self):
         success = True
