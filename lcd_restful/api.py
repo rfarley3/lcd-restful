@@ -63,6 +63,7 @@ class Server(object):
         self.lcd_view(self.views[0])
 
     def lcd_view(self, view):
+        self.lcd.clear()
         self.lcd.message(view.msg)
 
     def url(self, endpoint, ver='1'):
@@ -143,8 +144,8 @@ class Server(object):
             resp = 'No views submitted'
             return marshall_response(success, resp)
         self.views = []
-        for v, i in enumerate(req['views']):
-            self.views.append(View(i, v['msg']))
+        for i, v in enumerate(req['views']):
+            self.views.append(View(v['msg'], i))
         success = True
         resp = 'you have now reset all views to what you uploaded'
         return marshall_response(success, resp)
@@ -156,6 +157,10 @@ class Server(object):
         return marshall_response(success, resp)
 
     def get_view(self, vid):
+        try:
+            vid = int(vid)
+        except ValueError:
+            vid = -1
         if vid < 0 or vid >= len(self.views):
             success = False
             resp = 'Invalid view id submitted'
@@ -166,6 +171,10 @@ class Server(object):
         return marshall_response(success, resp)
 
     def change_to_view(self, vid):
+        try:
+            vid = int(vid)
+        except ValueError:
+            vid = -1
         if vid < 0 or vid >= len(self.views):
             success = False
             resp = 'Invalid view id submitted'
@@ -177,6 +186,10 @@ class Server(object):
         return marshall_response(success, resp)
 
     def set_view(self, vid):
+        try:
+            vid = int(vid)
+        except ValueError:
+            vid = -1
         if vid < 0 or vid > len(self.views):
             success = False
             resp = 'Invalid view id submitted'
@@ -195,6 +208,10 @@ class Server(object):
         return marshall_response(success, resp)
 
     def delete_view(self, vid):
+        try:
+            vid = int(vid)
+        except ValueError:
+            vid = -1
         if vid < 0 or vid >= len(self.views):
             success = False
             resp = 'Invalid view id submitted'
