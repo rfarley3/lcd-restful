@@ -265,3 +265,37 @@ class Client(object):
             # remote server fails and kills connection or returns nothing
             raise ApiConnError(e)
         return resp_val
+
+    # def streams(self, station=None):
+    #     if station is None:
+    #         rjson = self.get('streams')
+    #     else:
+    #         rjson = self.get('stations/%s/streams' % station)
+    #     if rjson is None or not rjson['success']:
+    #         print('API request failure: %s' % rjson)
+    #         return []
+    #     return rjson['resp']['streams']
+
+    # def play(self, station=None, stream=None):
+    #     url = 'player'
+    #     if station is not None and stream is not None:
+    #         url = 'player/%s/%s' % (station, stream)
+    #     rjson = self.post(url)
+    #     if rjson is None or not rjson['success']:
+    #         print('API request failure: %s' % rjson)
+    #         return False
+    #     return True
+
+    # def pause(self):
+    #     rjson = self.put('player')
+    #     if rjson is None or not rjson['success']:
+    #         print('API request failure: %s' % rjson)
+    #         return False
+    #     return True
+
+    # def stop(self):
+    #     rjson = self.delete('player')
+    #     if rjson is None or not rjson['success']:
+    #         print('API request failure: %s' % rjson)
+    #         return False
+    #     return True
