@@ -7,7 +7,7 @@ from bottle import (
     route as get, post, put, delete,
     request,  # response, hook
 )
-from urllib.parse import unquote
+from urllib.parse import unquote, quote
 
 from . import DEBUG, BOTTLE_DEBUG, PORT
 from .lcd import Lcd
@@ -164,7 +164,9 @@ class Server(object):
         self.curr_view = 0
         self.views = [v,]
         self.settings['rate'] = 0
-        return self.lcd_view(v)
+        success = True
+        resp = self.lcd_view(v)
+        return marshall_response(success, resp)
 
     def clear(self):
         self.lcd.clear()
@@ -202,6 +204,7 @@ class Server(object):
             return marshall_response(success, resp)
         self.views = []
         for i, v in enumerate(req['views']):
+            # TODO test View.valid
             self.views.append(View(v['msg'], i))
         success = True
         resp = 'you have now reset all views to what you uploaded'
@@ -258,6 +261,7 @@ class Server(object):
             resp = 'No view submitted'
             return marshall_response(success, resp)
         if vid == len(self.views):
+            # TODO test View.valid
             self.views.append(View(req['view']['msg'], vid))
         else:
             self.views[vid] = View(req['view']['msg'])
@@ -345,25 +349,33 @@ class Client(object):
             raise ApiConnError(e)
         return resp_val
 
-    # def streams(self, station=None):
-    #     if station is None:
-    #         rjson = self.get('streams')
-    #     else:
-    #         rjson = self.get('stations/%s/streams' % station)
-    #     if rjson is None or not rjson['success']:
-    #         print('API request failure: %s' % rjson)
-    #         return []
-    #     return rjson['resp']['streams']
+    def msg(self, msg=None):
+        if msg is None:
+            rjson = self.get('msg')
+        else:
+            msg = quote(msg)
+            rjson = self.post('msg/%s' % msg)
+        if rjson is None or not rjson['success']:
+            print('API request failure: %s' % rjson)
+            return None
+        return rjson['resp']
 
-    # def play(self, station=None, stream=None):
-    #     url = 'player'
-    #     if station is not None and stream is not None:
-    #         url = 'player/%s/%s' % (station, stream)
-    #     rjson = self.post(url)
-    #     if rjson is None or not rjson['success']:
-    #         print('API request failure: %s' % rjson)
-    #         return False
-    #     return True
+    def clear(self):
+        rjson = self.delete('msg')
+        if rjson is None or not rjson['success']:
+            print('API request failure: %s' % rjson)
+            return None
+        return rjson['resp']
+
+    def view(self, vid=None):
+        if vid is None:
+            rjson = self.get('view')
+        else:
+            rjson = self.get('view/%s' % vid)
+        if rjson is None or not rjson['success']:
+            print('API request failure: %s' % rjson)
+            return None
+        return rjson['resp']
 
     # def pause(self):
     #     rjson = self.put('player')
@@ -372,9 +384,3 @@ class Client(object):
     #         return False
     #     return True
 
-    # def stop(self):
-    #     rjson = self.delete('player')
-    #     if rjson is None or not rjson['success']:
-    #         print('API request failure: %s' % rjson)
-    #         return False
-    #     return True
