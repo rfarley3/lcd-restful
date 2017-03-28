@@ -35,8 +35,32 @@ class ApiConnError(BaseException):
 
 class View(object):
     def __init__(self, msg, vid=None):
-        self.msg = msg
+        self.msg = self.normalize(msg)
         self.id = vid
+        self.valid = True
+        if self.msg is None:
+            self.valid = False
+
+    def normalize(self, msg):
+        # verify all line lens
+        lines = []
+        for line in msg.split('\n'):
+            if len(line) > 20:  # TODO know lcd width
+                line = line[:20]
+            lines.append(line)
+        if len(lines) > 4:
+            lines = lines[:4]
+        msg = '\n'.join(lines)
+        # verify character ranges
+        # chars = ''
+        # for c in msg:
+        #     if c != '\n':
+        #         o = ord(c)
+        #         if o < 32 or o > 255:
+        #             c = '?'
+        #     chars += c
+        # msg = chars/
+        return msg
 
     def safe_msg(self):
         return self.msg.replace('\n', '\\n')
@@ -60,11 +84,15 @@ class Server(object):
         self.views = [View("this is the default\nview, update me", 0),]
         self.settings = {}
         self.settings['rate'] = 2
-        self.lcd_view(self.views[0])
+        self.curr_view = 0
+        self.lcd_view(self.views[self.curr_view])
 
     def lcd_view(self, view):
+        self.lcd_msg(view.msg)
+
+    def lcd_msg(self, msg):
         self.lcd.clear()
-        self.lcd.message(view.msg)
+        self.lcd.message(msg)
 
     def url(self, endpoint, ver='1'):
         return '/api/v%s/%s' % (ver, endpoint)
@@ -80,8 +108,9 @@ class Server(object):
         # v1
         get(self.url(''))(self.index)
         get(self.url('msg'))(self.direct_msg_get)
-        put(self.url('msg') + '/<msg>')(self.direct_msg)
         post(self.url('msg') + '/<msg>')(self.direct_msg)
+        put(self.url('msg') + '/<msg>')(self.direct_msg)
+        delete(self.url('msg'))(self.clear)
         get(self.url('view'))(self.get_views_settings)
         post(self.url('view'))(self.change_settings)
         put(self.url('view'))(self.set_views)
@@ -120,14 +149,29 @@ class Server(object):
         return marshall_response(success, resp)
 
     def direct_msg_get(self):
-        # TODO return the current view's message
-        return 'yet to be coded\n'
+        success = True
+        resp = '%s' % self.views[self.curr_view].msg
+        return marshall_response(success, resp)
 
     def direct_msg(self, msg):
-        # TODO un-urlencode msg
-        # TODO some sanitizing on msg
+        unqouted = unquote(msg)
+        v = View(msg, 0)
+        if not v.valid:
+            success = False
+            resp = 'Invalid view: %s' % v
+            return marshall_response(success, resp)
+        # NOTE clears view list
+        self.curr_view = 0
+        self.views = [v,]
+        self.settings['rate'] = 0
+        return self.lcd_view(v)
+
+    def clear(self):
         self.lcd.clear()
-        self.lcd.message(msg)
+        self.settings['rate'] = 0
+        success = True
+        resp = 'LCD has been cleared'
+        return marshall_response(success, resp)
 
     def get_views_settings(self):
         success = True
@@ -193,6 +237,7 @@ class Server(object):
             resp = 'Invalid view id submitted'
             return marshall_response(success, resp)
         view = self.views[vid]
+        self.curr_view = vid
         self.lcd_view(view)
         success = True
         resp = 'you have now changed the current view to the specified view id %s: %s' % (vid, view)
