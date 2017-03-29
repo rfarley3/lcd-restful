@@ -12,6 +12,7 @@ class FakeHw(object):
         self.has_outputted = False
         self.rows = rows
         self.cols = cols
+        self.decode_byte = None
         self.clear()
 
     def __repr__(self):
@@ -64,8 +65,13 @@ class FakeHw(object):
             return
         self.write8_cmd(val)
 
+    def decode(self, hitachi_byte):
+        if self.decode_byte is None:
+            return hitachi_byte
+        return self.decode_byte(hitachi_byte)
+
     def write8_chr(self, character):
-        self.cells[self.cur_r][self.cur_c] = character
+        self.cells[self.cur_r][self.cur_c] = self.decode(character)
         self.cur_c += 1
         self.out_refresh()
 
@@ -206,6 +212,7 @@ class FakeLcdApi(Lcd):
         super(FakeLcdApi, self).__init__(config)
         # pins are set by Lcd.__init__, so have to wait until now to set them within FakeGpio
         self._gpio.set_pins(self.config)
+        self._gpio.hw.decode_byte = self.decode_map
 
     def _pulse_enable(self):
         pass
