@@ -13,6 +13,21 @@ def main(argv):
     lcd.clear()
     lcd.message('1' * 20 + '\n' + '2' * 20 + '\n' + '3' * 20 + '\n' + '4' * 20)
     time.sleep(1.0)
+    i = 16
+    while i < 255:
+        lcd.clear()
+        lines = []
+        for j in range(4):
+            line = ''
+            max_i = i + 20
+            while i < max_i and i < 255:
+                c = chr(i)
+                line += c
+                i += 1
+            lines.append(line)
+        msg = '\n'.join(lines)
+        lcd.message(msg)
+        time.sleep(1.0)
 
     # # Demo showing the cursor.
     # lcd.clear()
