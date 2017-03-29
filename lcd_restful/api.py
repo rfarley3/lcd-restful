@@ -34,15 +34,18 @@ class ApiConnError(BaseException):
 
 
 class View(object):
-    def __init__(self, msg, vid=None):
-        self.msg = self.normalize(msg)
+    def __init__(self, msg, vid=None, lcd=None):
+        self.msg = msg
+        self.lcd = lcd
+        self.screen_bytes = self.normalize(msg)
         self.id = vid
         self.valid = True
-        if self.msg is None:
+        if self.screen_bytes is None:
             self.valid = False
 
     def normalize(self, msg):
         # verify all line lens
+        # on errors, return None
         lines = []
         for line in msg.split('\n'):
             if len(line) > 20:  # TODO know lcd width
@@ -51,6 +54,12 @@ class View(object):
         if len(lines) > 4:
             lines = lines[:4]
         msg = '\n'.join(lines)
+        msg = self.lcd.encode(msg)
+        # byte_arr = ''
+        # for c in msg:
+        #     byte_arr += chr(c)
+        # return byte_arr
+        # msg = msg.encode()
         # verify character ranges
         # chars = ''
         # for c in msg:
@@ -63,7 +72,8 @@ class View(object):
         return msg
 
     def safe_msg(self):
-        return self.msg.replace('\n', '\\n')
+        # TODO work out decode
+        return self.msg.replace('\n', '\\n').decode('utf-8')
 
     def __str__(self):
         return 'id: %s msg: %s' % (self.id, self.safe_msg())
@@ -81,14 +91,14 @@ class Server(object):
         self.lcd = lcd
         if self.lcd is None:
             self.lcd = Lcd()
-        self.views = [View("this is the default\nview, update me", 0),]
+        self.views = [View("this is the default\nview, update me", 0, self.lcd),]
         self.settings = {}
         self.settings['rate'] = 2
         self.curr_view = 0
         self.lcd_view(self.views[self.curr_view])
 
     def lcd_view(self, view):
-        self.lcd_msg(view.msg)
+        self.lcd_msg(view.screen_bytes)
 
     def lcd_msg(self, msg):
         self.lcd.clear()
@@ -155,7 +165,7 @@ class Server(object):
 
     def direct_msg(self, msg):
         unqouted = unquote(msg)
-        v = View(msg, 0)
+        v = View(msg, 0, self.lcd)
         if not v.valid:
             success = False
             resp = 'Invalid view: %s' % v
@@ -205,7 +215,7 @@ class Server(object):
         self.views = []
         for i, v in enumerate(req['views']):
             # TODO test View.valid
-            self.views.append(View(v['msg'], i))
+            self.views.append(View(v['msg'], i, self.lcd))
         success = True
         resp = 'you have now reset all views to what you uploaded'
         return marshall_response(success, resp)
@@ -262,9 +272,9 @@ class Server(object):
             return marshall_response(success, resp)
         if vid == len(self.views):
             # TODO test View.valid
-            self.views.append(View(req['view']['msg'], vid))
+            self.views.append(View(req['view']['msg'], vid, self.lcd))
         else:
-            self.views[vid] = View(req['view']['msg'])
+            self.views[vid] = View(req['view']['msg'], vid, self.lcd)
         success = True
         resp = 'you have now reset view %s to what you uploaded %s' % (vid, self.views[vid])
         return marshall_response(success, resp)
