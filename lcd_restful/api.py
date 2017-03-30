@@ -11,6 +11,7 @@ from urllib.parse import unquote, quote
 
 from . import DEBUG, BOTTLE_DEBUG, PORT
 from .lcd import Lcd
+# from .codec import encode_char
 
 
 def load_request(possible_keys):
@@ -33,47 +34,33 @@ class ApiConnError(BaseException):
     pass
 
 
+def screenitize(msg, cols, rows):
+    # on errors, return None
+    lines = []
+    for line in msg.split('\n'):
+        if len(line) > cols:
+            line = line[:cols]
+        lines.append(line)
+    if len(lines) > rows:
+        lines = lines[:rows]
+    msg = '\n'.join(lines)
+    # no need to convert to ord
+    #   codec.encode called by lcd.message
+    return msg
+
+
 class View(object):
-    def __init__(self, msg, vid=None, lcd=None):
+    def __init__(self, msg, vid=None, cols=20, rows=4):
         self.msg = msg
-        self.lcd = lcd
-        self.screen_bytes = self.normalize(msg)
+        self.screen_bytes = screenitize(msg, cols, rows)
         self.id = vid
         self.valid = True
-        if self.screen_bytes is None:
+        if self.screen_bytes != self.msg:  # is None
             self.valid = False
-
-    def normalize(self, msg):
-        # verify all line lens
-        # on errors, return None
-        lines = []
-        for line in msg.split('\n'):
-            if len(line) > 20:  # TODO know lcd width
-                line = line[:20]
-            lines.append(line)
-        if len(lines) > 4:
-            lines = lines[:4]
-        msg = '\n'.join(lines)
-        msg = self.lcd.encode(msg)
-        # byte_arr = ''
-        # for c in msg:
-        #     byte_arr += chr(c)
-        # return byte_arr
-        # msg = msg.encode()
-        # verify character ranges
-        # chars = ''
-        # for c in msg:
-        #     if c != '\n':
-        #         o = ord(c)
-        #         if o < 32 or o > 255:
-        #             c = '?'
-        #     chars += c
-        # msg = chars/
-        return msg
 
     def safe_msg(self):
         # TODO work out decode
-        return self.msg.replace('\n', '\\n').decode('utf-8')
+        return self.msg.replace('\n', '\\n')
 
     def __str__(self):
         return 'id: %s msg: %s' % (self.id, self.safe_msg())
@@ -91,7 +78,7 @@ class Server(object):
         self.lcd = lcd
         if self.lcd is None:
             self.lcd = Lcd()
-        self.views = [View("this is the default\nview, update me", 0, self.lcd),]
+        self.views = [View("this is the default\nview, update me", 0),]
         self.settings = {}
         self.settings['rate'] = 2
         self.curr_view = 0
@@ -102,7 +89,7 @@ class Server(object):
 
     def lcd_msg(self, msg):
         self.lcd.clear()
-        self.lcd.message(msg)
+        self.lcd.message(msg)  # , autowrap=True) no need with screenitize
 
     def url(self, endpoint, ver='1'):
         return '/api/v%s/%s' % (ver, endpoint)
@@ -165,7 +152,7 @@ class Server(object):
 
     def direct_msg(self, msg):
         unqouted = unquote(msg)
-        v = View(msg, 0, self.lcd)
+        v = View(msg, 0)
         if not v.valid:
             success = False
             resp = 'Invalid view: %s' % v
@@ -215,7 +202,7 @@ class Server(object):
         self.views = []
         for i, v in enumerate(req['views']):
             # TODO test View.valid
-            self.views.append(View(v['msg'], i, self.lcd))
+            self.views.append(View(v['msg'], i))
         success = True
         resp = 'you have now reset all views to what you uploaded'
         return marshall_response(success, resp)
@@ -272,9 +259,9 @@ class Server(object):
             return marshall_response(success, resp)
         if vid == len(self.views):
             # TODO test View.valid
-            self.views.append(View(req['view']['msg'], vid, self.lcd))
+            self.views.append(View(req['view']['msg'], vid))
         else:
-            self.views[vid] = View(req['view']['msg'], vid, self.lcd)
+            self.views[vid] = View(req['view']['msg'], vid)
         success = True
         resp = 'you have now reset view %s to what you uploaded %s' % (vid, self.views[vid])
         return marshall_response(success, resp)
@@ -387,7 +374,17 @@ class Client(object):
             return None
         return rjson['resp']
 
-    # def pause(self):
+    # def post_settings
+    # def put_view
+    # def put_views
+    # get(self.url('view'))(self.get_views_settings)
+    # post(self.url('view'))(self.change_settings)
+    # put(self.url('view'))(self.set_views)
+    # delete(self.url('view'))(self.delete_views)
+    # get(self.url('view') + '/<vid>')(self.get_view)
+    # post(self.url('view') + '/<vid>')(self.change_to_view)
+    # put(self.url('view') + '/<vid>')(self.set_view)
+    # delete(self.url('view') + '/<vid>')(self.delete_view)
     #     rjson = self.put('player')
     #     if rjson is None or not rjson['success']:
     #         print('API request failure: %s' % rjson)
