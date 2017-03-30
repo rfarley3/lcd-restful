@@ -17,21 +17,41 @@ def main(argv):
     lcd.clear()
     lcd.message('1' * 20 + '\n' + '2' * 20 + '\n' + '3' * 20 + '\n' + '4' * 20)
     time.sleep(1.0)
-    i = 16
+    # Show all possible characters on display
+    i = 0
     while i < 256:
         lcd.clear()
         lines = []
-        for j in range(4):
+        for j in range(4):  # lcd.rows
             line = ''
-            max_i = i + 20
+            max_i = i + 20  # lcd.cols
             while i < max_i and i < 256:
-                c = chr(i)
-                line += c
+                c = i
+                line += chr(c)
                 i += 1
             lines.append(line)
-        msg = '\n'.join(lines)
-        lcd.message(msg)
-        time.sleep(2.0)
+        lcd.message(lines, as_ordinal=True)
+        time.sleep(1.0)
+    lcd.clear()
+    lcd.message('Testing message by\nutf8 strings')
+    time.sleep(1.0)
+    test_lines = [
+        (' !"#$%&\'()*+,-./\n' +
+         '0123456789:;<=>?\n' +
+         '@ABCDEFGHIJKLMNO\n' +
+         'PQRSTUVWXYZ[¥]^_'),
+        ('`abcdefghijklmno\n' +
+         'pqrstuvwxyz{|}→←)'),
+        (' ｡｢｣､･ｦｧｨｩｪｫｬｭｮｯ\n' +
+         'ｰｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿ\n' +
+         'ﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏ\n' +
+         'ﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ゛゜'),
+        ('αäβεμσρg√⁻jˣ¢£ñö\n' +
+         'pqθ∞ΩüΣπxy千万円÷ █')]
+    for l in test_lines:
+        lcd.clear()
+        lcd.message(l)
+        time.sleep(1.0)
 
     # # Demo showing the cursor.
     # lcd.clear()

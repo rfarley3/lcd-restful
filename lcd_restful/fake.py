@@ -15,6 +15,9 @@ class FakeHw(object):
         self.rows = rows
         self.cols = cols
         self.decode_map = hitachi_utf_map()
+        # self.custom_chars = {}
+        # for i in range(8):
+        #     self.custom_chars[i] = ' '
         self.clear()
 
     def __repr__(self):
@@ -70,6 +73,8 @@ class FakeHw(object):
         self.write8_cmd(val)
 
     def write8_chr(self, char_val):
+        # if char_val < 8:
+        #     mapped_char = self.custom_chars[char_val]
         mapped_char = self.decode_map.get(char_val)
         self.cells[self.cur_r][self.cur_c] = mapped_char
         self.cur_c += 1

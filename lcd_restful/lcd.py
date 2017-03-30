@@ -32,56 +32,36 @@ class Lcd(AdaLcd):
             gpio=self.config.get('gpio'),
             pwm=self.config.get('pwm'))
         self.enc_map = utf_hitachi_map()
-        self.dec_map = hitachi_utf_map()
 
-    # def message(self, text):
-    #     """Write text to display.  Note that text can include newlines."""
-    #     line = 0
-    #     # Iterate through each character.
-    #     for char in text:
-    #         # Advance to next line if character is a new line.
-    #         if char == '\n':
-    #             line += 1
-    #             # Move to left or right side depending on text direction.
-    #             col = 0 if self.displaymode & LCD_ENTRYLEFT > 0 else self._cols-1
-    #             self.set_cursor(col, line)
-    #         # Write the character to the display.
-    #         else:
-    #             self.write8(ord(char), True)
+    def message(self, text, as_ordinal=False):
+        """Write text to display.  Note that text can include newlines."""
+        if not as_ordinal:
+            text = text.split('\n')
+        if not isinstance(text, list):
+            text = [text]
+        # print('writing msg %s' % text)
+        for i, line in enumerate(text):
+            # Advance to next line if character is a new line.
+            if i > 0:
+                # Move to left or right side depending on text direction.
+                col = 0 if self.displaymode & LCD_ENTRYLEFT > 0 else self._cols-1
+                self.set_cursor(col, i)
+            # Iterate through each character.
+            for char in line:
+                # Write the character to the display.
+                # print('writing %s' % char)
+                self.write8(self.encode_char(char, as_ordinal), True)
 
-    def encode_map(self, utf_char):
-        return self.enc_map.get(utf_char, ord(' '))
-        # get as many values for free as possible:
-        # MAYBE if none, then return utf_char.encode('shift_jisx0213')
-
-    def decode_map(self, hitachi_byte):
-        return self.dec_map.get(ord(hitachi_byte), ' ')
-
-    def encode_char(self, utf_char):
+    def encode_char(self, utf_char, as_ordinal=False):
+        if as_ordinal:
+            return ord(utf_char)
         # the custom chars are stored as 0-7
         if ord(utf_char) < 8:
             return ord(utf_char)
-        # new lines should pass through for message to parse
-        if utf_char == '\n':
-            # TODO handle \r
-            return '\n'
-        # catch the out of range chars
-        unknown_ch_byte = '?'.encode('shift_jisx0213')
-        if ord(utf_char) < 32 or ord(utf_char) > 255:
-            return ord(unknown_ch_byte)
-        if ord(utf_char) > 127 and ord(utf_char) < 161:
-            return ord(' ')  # TODO determine LCD actual behavior for this range
-            # return ord(unknown_ch_byte)
-        return self.encode_map(utf_char)
-
-    def encode(self, utf_str, strict=True):
-        ret_str = ''
-        for ch in utf_str:
-            ret_str += chr(self.encode_char(ch))
-        return ret_str
-
-    def decode(self, bytes_arr):
-        # return unicode str
-        # TODO
-        return bytes_arr.decode('shift_jisx0213')
-
+        if ord(utf_char) < 32:
+            return 32
+        # assumes no newlines
+        hitachi_val = self.enc_map.get(utf_char)
+        if hitachi_val is None:
+            raise BaseException('invalid input char %s, %s' % (utf_char, ord(utf_char)))
+        return hitachi_val
