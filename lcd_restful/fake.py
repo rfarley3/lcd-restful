@@ -1,9 +1,10 @@
-from .lcd import Lcd
-from .lcd import hitachi_utf_map
 from Adafruit_CharLCD import (
     LCD_ROW_OFFSETS,
     LCD_MOVERIGHT,
 )
+
+from .lcd import Lcd
+from .codec import hitachi_utf_map
 
 
 class FakeHw(object):
@@ -14,10 +15,6 @@ class FakeHw(object):
         self.rows = rows
         self.cols = cols
         self.decode_map = hitachi_utf_map()
-        # print('%s %s' % (len(self.decode_map), self.decode_map))
-        # character = 'H'
-        # mapped_char = self.decode_map.get(character)
-        # print('mapped %s %s' % (character, mapped_char))
         self.clear()
 
     def __repr__(self):
@@ -29,9 +26,7 @@ class FakeHw(object):
         lcd_str += '-' * (self.cols + 2) + '\n'
         for r in range(self.rows):
             r_str = '-'
-            # print('cellsr %s' % self.cells[r])
             for c in range(self.cols):
-                # print('cellsrc %s' % self.cells[r][c])
                 r_str += self.cells[r].get(c, ' ')
             lcd_str += r_str + '-\n'
         lcd_str += '-' * (self.cols + 2)
@@ -76,7 +71,6 @@ class FakeHw(object):
 
     def write8_chr(self, char_val):
         mapped_char = self.decode_map.get(char_val)
-        # print('mapped %s %s' % (char_val, mapped_char))
         self.cells[self.cur_r][self.cur_c] = mapped_char
         self.cur_c += 1
         self.out_refresh()
@@ -125,6 +119,7 @@ class FakeHw(object):
         self.cells = {}
         for r in range(self.rows):
             self.cells[r] = {}
+            # get(, ' ') allows us to skip:
             # for c in range(self.cols):
             #     self.cells[r][c] = ' '
         self.out_refresh()
