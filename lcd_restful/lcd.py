@@ -32,7 +32,7 @@ class Lcd(AdaLcd):
             gpio=self.config.get('gpio'),
             pwm=self.config.get('pwm'))
 
-    def message(self, text, as_ordinal=False):
+    def message(self, text, as_ordinal=False, autowrap=False):
         """Write text to display.  Note that text can include newlines."""
         # as_ordinal write8s each char as an int (ie passes bytes directly through)
         #     it assumes that each line is its own element in a list
@@ -43,6 +43,17 @@ class Lcd(AdaLcd):
             text = text.split('\n')
         if not isinstance(text, list):
             text = [text]
+        if autowrap:
+            # TODO consider textwrap package
+            text_tmp = []
+            for t in text:
+                while len(t) > self._cols:
+                    text_tmp.append(t[:self._cols])
+                    t = t[self._cols:]
+                text_tmp.append(t)
+            text = text_tmp
+        # auto cut off too tall of messages
+        text = text[:self._lines]
         # print('writing msg %s' % text)
         for i, line in enumerate(text):
             # Advance to next line if character is a new line.
