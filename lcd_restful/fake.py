@@ -1,8 +1,10 @@
-from .lcd import Lcd
 from Adafruit_CharLCD import (
     LCD_ROW_OFFSETS,
     LCD_MOVERIGHT,
 )
+
+from .lcd import Lcd
+from .codec import hitachi_utf_map
 
 
 class FakeHw(object):
@@ -12,6 +14,7 @@ class FakeHw(object):
         self.has_outputted = False
         self.rows = rows
         self.cols = cols
+        self.decode_map = hitachi_utf_map()
         self.clear()
 
     def __repr__(self):
@@ -35,7 +38,9 @@ class FakeHw(object):
         tot_c = self.cols + 2
         for r in range(tot_r):
             print('\b' * tot_c, end='')
-            print(' ' * tot_c, end='')
+            # + 5 to handle when wide chars make box larger
+            print(' ' * (tot_c + 5), end='')
+            print('\b' * 5, end='')
             print('\033[A', end='')
         print('\b' * tot_c, end='')
 
@@ -60,12 +65,13 @@ class FakeHw(object):
         self.write4_1 = True
         self.upper = None
         if self.rs:
-            self.write8_chr(chr(val))
+            self.write8_chr(val)
             return
         self.write8_cmd(val)
 
-    def write8_chr(self, character):
-        self.cells[self.cur_r][self.cur_c] = character
+    def write8_chr(self, char_val):
+        mapped_char = self.decode_map.get(char_val)
+        self.cells[self.cur_r][self.cur_c] = mapped_char
         self.cur_c += 1
         self.out_refresh()
 
@@ -113,6 +119,9 @@ class FakeHw(object):
         self.cells = {}
         for r in range(self.rows):
             self.cells[r] = {}
+            # get(, ' ') allows us to skip:
+            # for c in range(self.cols):
+            #     self.cells[r][c] = ' '
         self.out_refresh()
 
     def set_cursor(self, col, row):
