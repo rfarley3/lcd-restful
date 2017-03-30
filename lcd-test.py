@@ -3,11 +3,11 @@ import sys
 import time
 # from lcd_restful.lcd import Lcd
 from lcd_restful.fake import FakeLcdApi as Lcd
-# from lcd_restful.lcd import HITACHI_CHAR_MAP
 
 # WARNING double check pin configuration in lcd_restful.lcd
 
 def main(argv):
+    # from lcd_restful.lcd import HITACHI_CHAR_MAP
     # print('Char map is %s' % len(HITACHI_CHAR_MAP))
     # for i, ch in enumerate(HITACHI_CHAR_MAP):
     #     print('%s: %s' % (i, ch))

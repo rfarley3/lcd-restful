@@ -1,4 +1,11 @@
-# HD44780U table 4, ROM Code: A00
+"""Provides encoding from UTF characters to HD44780U-A00 and back again"""
+
+
+class HitachiEncodeError(BaseException):
+    pass
+
+
+# HD44780U datasheet table 4, ROM Code: A00
 # a predecessor to shift_jisx0213 similar to https://en.wikipedia.org/wiki/JIS_X_0201
 # >>> bytes([c for c in range(32,255)]).decode('shift_jisx0213', "replace")
 # 2.1.1. JIS X 0201 http://www.sljfaq.org/afaq/encodings.html#encodings-Overview-of-the-encoding-schemes
@@ -29,6 +36,10 @@ def hitachi_utf_map():
 
 def utf_hitachi_map():
     """Creates map, given an utf-8 chr return an int 0..255"""
+    # NOTE you probably don't mean to use chr(<some int>) as a key
+    #   for instance: chr(HITACHI_CHAR_MAP.index('¥')) == '\'
+    #   and mapping['\\'] does not exist
+    #   also fails when (eg ¢,£) char has different ord in utf vs this encoding
     mapping = {}
     mapping[' '] = 32
     for i, ch in enumerate(HITACHI_CHAR_MAP[32:]):
@@ -37,12 +48,6 @@ def utf_hitachi_map():
         if ch != ' ' and ch not in mapping:
             mapping[ch] = i + 32
     # handle alternate mappings
-    # mapping['\\'] = 76  # there is no \, instead its a yen symbol
-    # mapping['~'] = 126  # is not in the set
-    # for i in range(127,180):
-    #     ch_tmp = chr(i)
-    #     if ch_tmp != ' ' and ch_tmp not in mapping:
-    #         mapping[ch_tmp] = i
     mapping['°'] = 222
     mapping['゜'] = 222
     mapping['ﾟ'] = 222
@@ -51,3 +56,22 @@ def utf_hitachi_map():
     mapping['∑'] = 246
     mapping['x̄'] = 248
     return mapping
+
+
+def encode_char(utf_char):
+    # the custom chars are stored as 0-7
+    if ord(utf_char) < 8:
+        return ord(utf_char)
+    # assumes no newlines
+    # TODO test for newlines?
+    if ord(utf_char) < 32:
+        return 32
+    hitachi_val = encoding_map.get(utf_char)
+    if hitachi_val is None:
+        raise HitachiEncodeError(
+            'Invalid or not found input char: \'%s\' with utf ord: %s' %
+            (utf_char, ord(utf_char)))
+    return hitachi_val
+
+
+encoding_map = utf_hitachi_map()

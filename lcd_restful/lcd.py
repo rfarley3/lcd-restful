@@ -1,7 +1,7 @@
 from Adafruit_CharLCD import Adafruit_CharLCD as AdaLcd
 from Adafruit_CharLCD import LCD_ENTRYLEFT
 
-from .codec import hitachi_utf_map, utf_hitachi_map
+from .codec import encode_char
 
 
 class Lcd(AdaLcd):
@@ -31,10 +31,14 @@ class Lcd(AdaLcd):
             backlight=self.config.get('backlight'),
             gpio=self.config.get('gpio'),
             pwm=self.config.get('pwm'))
-        self.enc_map = utf_hitachi_map()
 
     def message(self, text, as_ordinal=False):
         """Write text to display.  Note that text can include newlines."""
+        # as_ordinal write8s each char as an int (ie passes bytes directly through)
+        #     it assumes that each line is its own element in a list
+        # not as_original treats each char as utf8 and decodes it
+        #     it assumes input is a string and splits on newlines
+        #     append an empty list in place of a trailing newline (so cursor is at entry)
         if not as_ordinal:
             text = text.split('\n')
         if not isinstance(text, list):
@@ -50,18 +54,8 @@ class Lcd(AdaLcd):
             for char in line:
                 # Write the character to the display.
                 # print('writing %s' % char)
-                self.write8(self.encode_char(char, as_ordinal), True)
-
-    def encode_char(self, utf_char, as_ordinal=False):
-        if as_ordinal:
-            return ord(utf_char)
-        # the custom chars are stored as 0-7
-        if ord(utf_char) < 8:
-            return ord(utf_char)
-        if ord(utf_char) < 32:
-            return 32
-        # assumes no newlines
-        hitachi_val = self.enc_map.get(utf_char)
-        if hitachi_val is None:
-            raise BaseException('invalid input char %s, %s' % (utf_char, ord(utf_char)))
-        return hitachi_val
+                if as_ordinal:
+                    char = ord(char)
+                else:
+                    char = encode_char(char)
+                self.write8(char, True)
