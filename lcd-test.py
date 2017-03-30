@@ -3,10 +3,14 @@ import sys
 import time
 # from lcd_restful.lcd import Lcd
 from lcd_restful.fake import FakeLcdApi as Lcd
+from lcd_restful.lcd import HITACHI_CHAR_MAP
 
 # WARNING double check pin configuration in lcd_restful.lcd
 
 def main(argv):
+    # print('Char map is %s' % len(HITACHI_CHAR_MAP))
+    # for i, ch in enumerate(HITACHI_CHAR_MAP):
+    #     print('%s: %s' % (i, ch))
     lcd = Lcd()
     lcd.message('Hello\nworld!')
     time.sleep(1.0)
@@ -14,20 +18,20 @@ def main(argv):
     lcd.message('1' * 20 + '\n' + '2' * 20 + '\n' + '3' * 20 + '\n' + '4' * 20)
     time.sleep(1.0)
     i = 16
-    while i < 255:
+    while i < 256:
         lcd.clear()
         lines = []
         for j in range(4):
             line = ''
             max_i = i + 20
-            while i < max_i and i < 255:
+            while i < max_i and i < 256:
                 c = chr(i)
                 line += c
                 i += 1
             lines.append(line)
         msg = '\n'.join(lines)
         lcd.message(msg)
-        time.sleep(1.0)
+        time.sleep(2.0)
 
     # # Demo showing the cursor.
     # lcd.clear()
