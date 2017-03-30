@@ -155,7 +155,7 @@ class Server(object):
 
     def direct_msg(self, msg):
         unqouted = unquote(msg)
-        v = View(msg, 0)  # TODO FIX
+        v = View(unqouted, 0)
         if not v.valid:
             success = False
             resp = 'Invalid view: %s' % v
@@ -165,7 +165,7 @@ class Server(object):
         self.views = [v, ]
         self.settings['rate'] = 0
         success = True
-        resp = self.lcd_view(v)
+        resp = '%s' % self.views[self.curr_view].msg
         return marshall_response(success, resp)
 
     def clear(self):
