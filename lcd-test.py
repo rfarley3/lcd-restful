@@ -33,6 +33,12 @@ def main(argv):
         lcd.message(lines, as_ordinal=True)
         time.sleep(1.0)
     lcd.clear()
+    lcd.message('Testing message that needs autowrap', autowrap=True)
+    time.sleep(1.0)
+    lcd.clear()
+    lcd.message('Testing\nmessage with\ntoo many\nlines\nshould not see me', autowrap=True)
+    time.sleep(1.0)
+    lcd.clear()
     lcd.message('Testing message by\nutf8 strings')
     time.sleep(1.0)
     test_lines = [
