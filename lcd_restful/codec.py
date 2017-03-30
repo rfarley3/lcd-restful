@@ -6,9 +6,11 @@ class HitachiEncodeError(BaseException):
 
 
 # HD44780U datasheet table 4, ROM Code: A00
-# a predecessor to shift_jisx0213 similar to https://en.wikipedia.org/wiki/JIS_X_0201
+# a predecessor to shift_jisx0213 similar to
+#    https://en.wikipedia.org/wiki/JIS_X_0201
 # >>> bytes([c for c in range(32,255)]).decode('shift_jisx0213', "replace")
-# 2.1.1. JIS X 0201 http://www.sljfaq.org/afaq/encodings.html#encodings-Overview-of-the-encoding-schemes
+# 2.1.1. JIS X 0201 http://www.sljfaq.org/afaq/encodings.html
+#    #encodings-Overview-of-the-encoding-schemes
 HITACHI_CHAR_MAP = (
     ' ' * 32 +
     ' !"#$%&\'()*+,-./' +

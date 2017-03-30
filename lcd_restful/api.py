@@ -66,7 +66,10 @@ class View(object):
         return 'id: %s msg: %s' % (self.id, self.safe_msg())
 
     def __repr__(self):
-        return "%s(msg='%s',vid=%s)" % (self.__class__.__name__, self.safe_msg(), self.id)
+        return "%s(msg='%s',vid=%s)" % (
+            self.__class__.__name__,
+            self.safe_msg(),
+            self.id)
 
 
 class Server(object):
@@ -78,7 +81,7 @@ class Server(object):
         self.lcd = lcd
         if self.lcd is None:
             self.lcd = Lcd()
-        self.views = [View("this is the default\nview, update me", 0),]
+        self.views = [View("this is the default\nview, update me", 0), ]
         self.settings = {}
         self.settings['rate'] = 2
         self.curr_view = 0
@@ -152,14 +155,14 @@ class Server(object):
 
     def direct_msg(self, msg):
         unqouted = unquote(msg)
-        v = View(msg, 0)
+        v = View(msg, 0)  # TODO FIX
         if not v.valid:
             success = False
             resp = 'Invalid view: %s' % v
             return marshall_response(success, resp)
         # NOTE clears view list
         self.curr_view = 0
-        self.views = [v,]
+        self.views = [v, ]
         self.settings['rate'] = 0
         success = True
         resp = self.lcd_view(v)
@@ -390,4 +393,3 @@ class Client(object):
     #         print('API request failure: %s' % rjson)
     #         return False
     #     return True
-
