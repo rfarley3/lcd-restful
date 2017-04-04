@@ -382,21 +382,28 @@ class Client(object):
             return None
         return rjson['resp']
 
-    def view(self, vid=None):
+    def view(self, vid=None, view=None):
         if vid is None:
             rjson = self.get('view')
-        else:
+        else:  # if view is None:
             rjson = self.get('view/%s' % vid)
         if rjson is None or not rjson['success']:
             print('API request failure: %s' % rjson)
             return None
         return rjson['resp']
 
-    # def post_settings
+    def settings(self, settings=None):
+        if settings is None:
+            rjson = self.get('settings')
+        else:
+            rjson = self.post('settings', {'settings': settings})
+        if rjson is None or not rjson['success']:
+            print('API request failure: %s' % rjson)
+            return None
+        return rjson['resp']
+
     # def put_view
     # def put_views
-    # get(self.url('view'))(self.get_views_settings)
-    # post(self.url('view'))(self.change_settings)
     # put(self.url('view'))(self.set_views)
     # delete(self.url('view'))(self.delete_views)
     # get(self.url('view') + '/<vid>')(self.get_view)
