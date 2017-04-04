@@ -104,18 +104,20 @@ class Server(object):
         # get('/<path:path>', method='OPTIONS')(self.options_handler)
         # hook('after_request')(self.enable_cors)
 
-        # API functions
-        # v1
+        # API v1 functions
+        # UI
         get(self.url(''))(self.index)
+        # non-view based API
         get(self.url('msg'))(self.direct_msg_get)
         post(self.url('msg') + '/<msg>')(self.direct_msg)
         put(self.url('msg') + '/<msg>')(self.direct_msg)
         delete(self.url('msg'))(self.clear)
-        get(self.url('view'))(self.get_views_settings)
+        # view based API
+        get(self.url('view'))(self.get_view)
+        get(self.url('view') + '/<vid>')(self.get_view)
         post(self.url('view'))(self.change_settings)
         put(self.url('view'))(self.set_views)
         delete(self.url('view'))(self.delete_views)
-        get(self.url('view') + '/<vid>')(self.get_view)
         post(self.url('view') + '/<vid>')(self.change_to_view)
         put(self.url('view') + '/<vid>')(self.set_view)
         delete(self.url('view') + '/<vid>')(self.delete_view)
@@ -216,18 +218,26 @@ class Server(object):
         resp = 'you have now deleted all views'
         return marshall_response(success, resp)
 
-    def get_view(self, vid):
+    def get_view(self, vid=None):
+        success = True
+        resp = {}
+        resp['settings'] = self.settings
+        # print('views %s' % self.views)
+        if vid is None:
+            resp['views'] = [jsonpickle.encode(v) for v in self.views]
+            return marshall_response(success, resp)
         try:
             vid = int(vid)
         except ValueError:
             vid = -1
         if vid < 0 or vid >= len(self.views):
             success = False
-            resp = 'Invalid view id submitted'
+            resp['msg'] = 'Invalid view id submitted'
+            resp['views'] = []
             return marshall_response(success, resp)
         view = self.views[vid]
         success = True
-        resp = 'this returns a particular view %s: %s' % (vid, view)
+        resp['views'].append(jsonpickle.encode(view))
         return marshall_response(success, resp)
 
     def change_to_view(self, vid):
