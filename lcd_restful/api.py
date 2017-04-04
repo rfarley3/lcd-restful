@@ -104,20 +104,26 @@ class Server(object):
         # get('/<path:path>', method='OPTIONS')(self.options_handler)
         # hook('after_request')(self.enable_cors)
 
-        # API functions
-        # v1
+        # API v1 functions
+        # UI
         get(self.url(''))(self.index)
-        get(self.url('msg'))(self.direct_msg_get)
-        post(self.url('msg') + '/<msg>')(self.direct_msg)
-        put(self.url('msg') + '/<msg>')(self.direct_msg)
-        delete(self.url('msg'))(self.clear)
-        get(self.url('view'))(self.get_views_settings)
-        post(self.url('view'))(self.change_settings)
-        put(self.url('view'))(self.set_views)
-        delete(self.url('view'))(self.delete_views)
+        # non-view based API
+        get(self.url('msg'))(self.get_msg)
+        post(self.url('msg') + '/<msg>')(self.set_msg)
+        put(self.url('msg') + '/<msg>')(self.set_msg)
+        delete(self.url('msg'))(self.clear_lcd)
+        # settings API
+        get(self.url('settings'))(self.get_settings)
+        post(self.url('settings'))(self.set_settings)
+        put(self.url('settings'))(self.set_settings)
+        # view based API
+        get(self.url('view'))(self.get_view)
         get(self.url('view') + '/<vid>')(self.get_view)
-        post(self.url('view') + '/<vid>')(self.change_to_view)
+        post(self.url('view'))(self.set_view)
+        post(self.url('view') + '/<vid>')(self.set_view)
+        put(self.url('view'))(self.set_view)
         put(self.url('view') + '/<vid>')(self.set_view)
+        delete(self.url('view'))(self.delete_view)
         delete(self.url('view') + '/<vid>')(self.delete_view)
         run(host=self.host, port=self.port,
             debug=BOTTLE_DEBUG, quiet=not BOTTLE_DEBUG)
@@ -148,12 +154,12 @@ class Server(object):
         resp = 'LCD API is running'
         return marshall_response(success, resp)
 
-    def direct_msg_get(self):
+    def get_msg(self):
         success = True
         resp = '%s' % self.views[self.curr_view].msg
         return marshall_response(success, resp)
 
-    def direct_msg(self, msg):
+    def set_msg(self, msg):
         unqouted = unquote(msg)
         v = View(unqouted, 0)
         if not v.valid:
@@ -168,23 +174,21 @@ class Server(object):
         resp = '%s' % self.views[self.curr_view].msg
         return marshall_response(success, resp)
 
-    def clear(self):
+    # Does not clear any of the views
+    def clear_lcd(self):
         self.lcd.clear()
         self.settings['rate'] = 0
         success = True
         resp = 'LCD has been cleared'
         return marshall_response(success, resp)
 
-    def get_views_settings(self):
+    def get_settings(self):
         success = True
-        resp = 'this returns all the settings and a list of all views'
         resp = {}
         resp['settings'] = self.settings
-        # print('views %s' % self.views)
-        resp['views'] = [jsonpickle.encode(v) for v in self.views]
         return marshall_response(success, resp)
 
-    def change_settings(self):
+    def set_settings(self):
         req = load_request(['settings'])
         # print('req: %s' % req)
         if req['settings'] is None:
@@ -194,6 +198,27 @@ class Server(object):
         self.settings.update(req['settings'])
         success = True
         resp = 'you have now changed the settings %s' % self.settings
+        return marshall_response(success, resp)
+
+    def get_view(self, vid=None):
+        success = True
+        resp = {}
+        # print('views %s' % self.views)
+        if vid is None:
+            resp['views'] = [jsonpickle.encode(v) for v in self.views]
+            return marshall_response(success, resp)
+        try:
+            vid = int(vid)
+        except ValueError:
+            vid = -1
+        if vid < 0 or vid >= len(self.views):
+            success = False
+            resp['msg'] = 'Invalid view id submitted'
+            resp['views'] = []
+            return marshall_response(success, resp)
+        view = self.views[vid]
+        success = True
+        resp['views'].append(jsonpickle.encode(view))
         return marshall_response(success, resp)
 
     def set_views(self):
@@ -210,32 +235,8 @@ class Server(object):
         resp = 'you have now reset all views to what you uploaded'
         return marshall_response(success, resp)
 
-    def delete_views(self):
-        self.views = []
-        success = True
-        resp = 'you have now deleted all views'
-        return marshall_response(success, resp)
-
-    def get_view(self, vid):
-        try:
-            vid = int(vid)
-        except ValueError:
-            vid = -1
-        if vid < 0 or vid >= len(self.views):
-            success = False
-            resp = 'Invalid view id submitted'
-            return marshall_response(success, resp)
-        view = self.views[vid]
-        success = True
-        resp = 'this returns a particular view %s: %s' % (vid, view)
-        return marshall_response(success, resp)
-
-    def change_to_view(self, vid):
-        try:
-            vid = int(vid)
-        except ValueError:
-            vid = -1
-        if vid < 0 or vid >= len(self.views):
+    def change_to_vid(self, vid):
+        if vid == len(self.views):
             success = False
             resp = 'Invalid view id submitted'
             return marshall_response(success, resp)
@@ -246,20 +247,29 @@ class Server(object):
         resp = 'you have now changed the current view to the specified view id %s: %s' % (vid, view)
         return marshall_response(success, resp)
 
-    def set_view(self, vid):
+    def set_view(self, vid=None):
+        # if no vid, then set all from ['views']
+        if vid is None:
+            return self.set_views()
+        # all others need vid to be valid
         try:
             vid = int(vid)
         except ValueError:
-            vid = -1
-        if vid < 0 or vid > len(self.views):
             success = False
-            resp = 'Invalid view id submitted'
+            resp = 'Invalid view id submitted %s' % vid
             return marshall_response(success, resp)
+        max_vid = len(self.views)
         req = load_request(['view'])
         if req['view'] is None:
+            max_vid -= 1
+        if vid > max_vid:
             success = False
-            resp = 'No view submitted'
+            resp = 'Invalid view id submitted %s' % vid
             return marshall_response(success, resp)
+        # if vid but no req, then change curr view to vid
+        if req['view'] is None:
+            return self.change_to_vid(vid)
+        # if vid and req, then update that vid to req
         if vid == len(self.views):
             # TODO test View.valid
             self.views.append(View(req['view']['msg'], vid))
@@ -269,7 +279,12 @@ class Server(object):
         resp = 'you have now reset view %s to what you uploaded %s' % (vid, self.views[vid])
         return marshall_response(success, resp)
 
-    def delete_view(self, vid):
+    def delete_view(self, vid=None):
+        if vid is None:
+            self.views = []
+            success = True
+            resp = 'you have now deleted all views'
+            return marshall_response(success, resp)
         try:
             vid = int(vid)
         except ValueError:
