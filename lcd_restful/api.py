@@ -221,14 +221,9 @@ class Server(object):
         resp['views'].append(jsonpickle.encode(view))
         return marshall_response(success, resp)
 
-    def set_views(self):
-        req = load_request(['views'])
-        if req['views'] is None:
-            success = False
-            resp = 'No views submitted'
-            return marshall_response(success, resp)
+    def set_views(self, views):
         self.views = []
-        for i, v in enumerate(req['views']):
+        for i, v in enumerate(views):
             # TODO test View.valid
             self.views.append(View(v['msg'], i))
         success = True
@@ -236,10 +231,6 @@ class Server(object):
         return marshall_response(success, resp)
 
     def change_to_vid(self, vid):
-        if vid == len(self.views):
-            success = False
-            resp = 'Invalid view id submitted'
-            return marshall_response(success, resp)
         view = self.views[vid]
         self.curr_view = vid
         self.lcd_view(view)
@@ -250,7 +241,12 @@ class Server(object):
     def set_view(self, vid=None):
         # if no vid, then set all from ['views']
         if vid is None:
-            return self.set_views()
+            req = load_request(['views'])
+            if req['views'] is None:
+                success = False
+                resp = 'No views submitted'
+                return marshall_response(success, resp)
+            return self.set_views(views)
         # all others need vid to be valid
         try:
             vid = int(vid)
@@ -382,16 +378,6 @@ class Client(object):
             return None
         return rjson['resp']
 
-    def view(self, vid=None, view=None):
-        if vid is None:
-            rjson = self.get('view')
-        else:  # if view is None:
-            rjson = self.get('view/%s' % vid)
-        if rjson is None or not rjson['success']:
-            print('API request failure: %s' % rjson)
-            return None
-        return rjson['resp']
-
     def settings(self, settings=None):
         if settings is None:
             rjson = self.get('settings')
@@ -402,16 +388,53 @@ class Client(object):
             return None
         return rjson['resp']
 
-    # def put_view
-    # def put_views
-    # put(self.url('view'))(self.set_views)
-    # delete(self.url('view'))(self.delete_views)
-    # get(self.url('view') + '/<vid>')(self.get_view)
-    # post(self.url('view') + '/<vid>')(self.change_to_view)
-    # put(self.url('view') + '/<vid>')(self.set_view)
-    # delete(self.url('view') + '/<vid>')(self.delete_view)
-    #     rjson = self.put('player')
-    #     if rjson is None or not rjson['success']:
-    #         print('API request failure: %s' % rjson)
-    #         return False
-    #     return True
+    def get_view(self, vid=None):
+        """Get all views or particular vid"""
+        if vid is None:
+            rjson = self.get('view')
+        else:
+            rjson = self.get('view/%s' % vid)
+        if rjson is None or not rjson['success']:
+            print('API request failure: %s' % rjson)
+            return None
+        return rjson['resp']
+
+    def print_view(self, vid):
+        """Make a particular vid show on LCD"""
+        rjson = self.put('view/%s' % vid)
+        if rjson is None or not rjson['success']:
+            print('API request failure: %s' % rjson)
+            return None
+        return rjson['resp']
+
+    def set_view(self, msg, vid):
+        """Set particular vid, or append"""
+        # TODO if vid is -1, get index to use for append
+        rjson = self.post('view/%s' % vid, {'view': {'msg': msg}})
+        if rjson is None or not rjson['success']:
+            print('API request failure: %s' % rjson)
+            return None
+        return rjson['resp']
+
+    def set_views(self, msgs):
+        """Set all views"""
+        view_d = {}
+        view_d['views'] = []
+        for m in msgs:
+            view_d['views'].append({'msg': m})
+        rjson = self.post('view', view_d})
+        if rjson is None or not rjson['success']:
+            print('API request failure: %s' % rjson)
+            return None
+        return rjson['resp']
+
+    def delete(self, vid=None):
+        if vid is None:
+            rjson = self.delete('view')
+        else:
+            rjson = self.delete('view/%s' % vid)
+        if rjson is None or not rjson['success']:
+            print('API request failure: %s' % rjson)
+            return None
+        return rjson['resp']
+
