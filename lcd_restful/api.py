@@ -246,7 +246,7 @@ class Server(object):
                 success = False
                 resp = 'No views submitted'
                 return marshall_response(success, resp)
-            return self.set_views(views)
+            return self.set_views(req['views'])
         # all others need vid to be valid
         try:
             vid = int(vid)
@@ -408,7 +408,9 @@ class Client(object):
         return rjson['resp']
 
     def set_view(self, msg, vid):
-        """Set particular vid, or append"""
+        """Set all views, particular vid, or append"""
+        if isinstance(msg, list):
+            return self.set_views(msg)
         # TODO if vid is -1, get index to use for append
         rjson = self.post('view/%s' % vid, {'view': {'msg': msg}})
         if rjson is None or not rjson['success']:
@@ -422,13 +424,13 @@ class Client(object):
         view_d['views'] = []
         for m in msgs:
             view_d['views'].append({'msg': m})
-        rjson = self.post('view', view_d})
+        rjson = self.post('view', view_d)
         if rjson is None or not rjson['success']:
             print('API request failure: %s' % rjson)
             return None
         return rjson['resp']
 
-    def delete(self, vid=None):
+    def del_view(self, vid=None):
         if vid is None:
             rjson = self.delete('view')
         else:
@@ -437,4 +439,3 @@ class Client(object):
             print('API request failure: %s' % rjson)
             return None
         return rjson['resp']
-
