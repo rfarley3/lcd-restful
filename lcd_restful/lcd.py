@@ -18,6 +18,8 @@ class Lcd(AdaLcd):
     }
 
     def __init__(self, config={}):
+        import RPi.GPIO; import Adafruit_GPIO.GPIO as GPIO; g = GPIO.RPiGPIOAdapter(RPi.GPIO)
+        self.config['gpio'] = g
         self.config.update(config)
         super(Lcd, self).__init__(
             self.config['rs'],

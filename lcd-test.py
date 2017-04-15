@@ -1,8 +1,9 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
+# coding=utf8
 import sys
 import time
-# from lcd_restful.lcd import Lcd
-from lcd_restful.fake import FakeLcdApi as Lcd
+from lcd_restful.lcd import Lcd
+# from lcd_restful.fake import FakeLcdApi as Lcd
 
 # WARNING double check pin configuration in lcd_restful.lcd
 
@@ -32,7 +33,7 @@ def main(argv):
                 i += 1
             lines.append(line)
         lcd.message(lines, as_ordinal=True)
-        time.sleep(1.0)
+        time.sleep(4.0)
     lcd.clear()
     lcd.message('Testing message that needs autowrap', autowrap=True)
     time.sleep(1.0)
@@ -58,7 +59,7 @@ def main(argv):
     for l in test_lines:
         lcd.clear()
         lcd.message(l)
-        time.sleep(1.0)
+        time.sleep(8.0)
 
     # # Demo showing the cursor.
     # lcd.clear()
@@ -90,6 +91,8 @@ def main(argv):
 
     lcd.clear()
     lcd.message('Goodbye!')
+    time.sleep(2.0)
+    lcd.clear()
     return 0
 
 
