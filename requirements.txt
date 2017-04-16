@@ -2,3 +2,6 @@ rplcd
 requests
 bottle
 jsonpickle
+mock
+RPi.GPIO
+

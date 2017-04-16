@@ -1,9 +1,7 @@
-from RPLCD.common import (
-    LCD_MOVERIGHT,
-)
-# from RPCLD.gpio import CharLCD
-
-from .lcd import Lcd
+# from RPLCD.common import (
+#     LCD_MOVERIGHT,
+# )
+LCD_MOVERIGHT = 0x04
 
 
 class FakeHw(object):
@@ -208,14 +206,3 @@ class FakeGpio(object):
             pinnums_to_bools[self._d6],
             pinnums_to_bools[self._d7])
 
-
-class FakeLcdApi(Lcd):
-    def __init__(self, config={}):
-        self.fake_gpio = FakeGpio()
-        config.update({'gpio': self.fake_gpio})
-        super(FakeLcdApi, self).__init__(config)
-        # pins are set by Lcd.__init__, so have to wait until now to set them within FakeGpio
-        self._gpio.set_pins(self.config)
-
-    def _pulse_enable(self):
-        pass

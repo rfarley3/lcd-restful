@@ -1,7 +1,33 @@
-from RPLCD.common import (
-    LCD_ENTRYLEFT,
-)
-from RPLCD.gpio import CharLCD
+on_rpi = True
+try:
+    import RPi.GPIO
+except ImportError:
+    on_rpi = False
+if not on_rpi:
+    print('Warning, not in RPi, using mock GPIO')
+    import mock
+    # Mock RPi.GPIO module (https://m.reddit.com/r/Python/comments/5eddp5/mock_testing_rpigpio/)
+    MockRPi = mock.MagicMock()
+    modules = {
+        'RPi': MockRPi,
+        'RPi.GPIO': MockRPi.GPIO,
+    }
+    patcher = mock.patch.dict('sys.modules', modules)
+    patcher.start()
+# from .fake import FakeGpio
+# import sys
+# sys.modules["RPi.GPIO"] = FakeGpio
+# import RPLCD
+#if imp.lock_held() is True:
+#    del sys.modules[moduleName]
+#    sys.modules[tmpModuleName] = __import__(tmpModuleName)
+#    sys.modules[moduleName] = __import__(tmpModuleName)
+# Alignment.left == LCD_ENTRYLEFT
+from RPLCD import Alignment
+from RPLCD import CharLCD
+if not on_rpi:
+    from .fake import FakeGpio
+    MockRPi.GPIO = FakeGpio
 
 
 class Lcd(CharLCD):
@@ -17,7 +43,7 @@ class Lcd(CharLCD):
         'linebreaks': True,
     }
 
-    def __init__(self, config={}):
+    def __init__(self, config={}, fake=False):
         self.config.update(config)
         super(Lcd, self).__init__(
             pin_rs=self.config['rs'],
@@ -31,9 +57,21 @@ class Lcd(CharLCD):
             pin_backlight=self.config.get('backlight'),
             rows=self.config.get('rows'),
             cols=self.config.get('cols'),
-            autolinebreaks=self.config.get('linebreaks'))
+            auto_linebreaks=self.config.get('linebreaks'))
+        # pins are set by Lcd.__init__, so have to wait until now to set them within FakeGpio
+        if fake:
+            self._gpio.set_pins(self.config)
 
-    def message(self, text, as_ordinal=False, autowrap=False):
+    def message(self, msg, as_ordinal=False, autowrap=False):
+        # TODO toggle auto_linebreaks
+        if not as_ordinal:
+            return self.write_string(msg)
+        for line in msg:
+            for b in line:
+                self.write(b)
+            # adjust row number
+
+    def message_1(self, text, as_ordinal=False, autowrap=False):
         """Write text to display.  Note that text can include newlines."""
         # as_ordinal write8s each char as an int (ie passes bytes directly through)
         #     it assumes that each line is its own element in a list
@@ -60,7 +98,9 @@ class Lcd(CharLCD):
             # Advance to next line if character is a new line.
             if i > 0:
                 # Move to left or right side depending on text direction.
-                col = 0 if self.displaymode & LCD_ENTRYLEFT > 0 else self._cols-1
+                col = self._cols - 1
+                if (self.displaymode & Alignment.left) > 0:
+                    col = 0
                 self.set_cursor(col, i)
             # Iterate through each character.
             for char in line:
@@ -71,3 +111,16 @@ class Lcd(CharLCD):
                 else:
                     char = encode_char(char)
                 self.write8(char, True)
+
+
+class FakeLcd(Lcd):
+    def __init__(self, config={}):
+        self.fake_gpio = FakeGpio()
+        config.update({'gpio': self.fake_gpio})
+        super(FakeLcdApi, self).__init__(config)
+        # pins are set by Lcd.__init__, so have to wait until now to set them within FakeGpio
+        self._gpio.set_pins(self.config)
+
+    def _pulse_enable(self):
+        pass
+
