@@ -1,5 +1,12 @@
 from Adafruit_CharLCD import Adafruit_CharLCD as AdaLcd
 from Adafruit_CharLCD import LCD_ENTRYLEFT
+# patch bc Ada lib can't detect RPi Zero W chipset
+import Adafruit_GPIO.GPIO as GPIO
+on_rpi = True
+try:
+    import RPi.GPIO
+except:
+    on_rpi = False
 
 from .codec import encode_char
 
@@ -19,6 +26,9 @@ class Lcd(AdaLcd):
 
     def __init__(self, config={}):
         self.config.update(config)
+        gpio = self.config.get('gpio')
+        if gpio is None and on_rpi:
+            gpio = GPIO.RPiGPIOAdapter(RPi.GPIO)
         super(Lcd, self).__init__(
             self.config['rs'],
             self.config['en'],
@@ -29,7 +39,7 @@ class Lcd(AdaLcd):
             self.config['cols'],
             self.config['rows'],
             backlight=self.config.get('backlight'),
-            gpio=self.config.get('gpio'),
+            gpio=gpio,
             pwm=self.config.get('pwm'))
 
     def message(self, text, as_ordinal=False, autowrap=False):
