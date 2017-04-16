@@ -1,4 +1,4 @@
-Adafruit_CharLCD
+rplcd
 requests
 bottle
 jsonpickle

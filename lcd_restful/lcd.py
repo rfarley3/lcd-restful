@@ -1,46 +1,37 @@
-from Adafruit_CharLCD import Adafruit_CharLCD as AdaLcd
-from Adafruit_CharLCD import LCD_ENTRYLEFT
-# patch bc Ada lib can't detect RPi Zero W chipset
-import Adafruit_GPIO.GPIO as GPIO
-on_rpi = True
-try:
-    import RPi.GPIO
-except:
-    on_rpi = False
-
-from .codec import encode_char
+from RPLCD.common import (
+    LCD_ENTRYLEFT,
+)
+from RPLCD.gpio import CharLCD
 
 
-class Lcd(AdaLcd):
+class Lcd(CharLCD):
     config = {
         'cols': 20,
         'rows': 4,
-        'pwm': None,
         'rs': 25,  # LCD Pin 4
         'en': 24,  # -       6
         'd4': 23,  # -      11
         'd5': 17,  # -      12
         'd6': 21,  # -      13
         'd7': 22,  # -      14
+        'linebreaks': True,
     }
 
     def __init__(self, config={}):
         self.config.update(config)
-        gpio = self.config.get('gpio')
-        if gpio is None and on_rpi:
-            gpio = GPIO.RPiGPIOAdapter(RPi.GPIO)
         super(Lcd, self).__init__(
-            self.config['rs'],
-            self.config['en'],
-            self.config['d4'],
-            self.config['d5'],
-            self.config['d6'],
-            self.config['d7'],
-            self.config['cols'],
-            self.config['rows'],
-            backlight=self.config.get('backlight'),
-            gpio=gpio,
-            pwm=self.config.get('pwm'))
+            pin_rs=self.config['rs'],
+            pin_rw=self.config.get('rw'),
+            pin_e=self.config['en'],
+            pins_data=[
+                self.config['d4'],
+                self.config['d5'],
+                self.config['d6'],
+                self.config['d7']],
+            pin_backlight=self.config.get('backlight'),
+            rows=self.config.get('rows'),
+            cols=self.config.get('cols'),
+            autolinebreaks=self.config.get('linebreaks'))
 
     def message(self, text, as_ordinal=False, autowrap=False):
         """Write text to display.  Note that text can include newlines."""

@@ -1,10 +1,9 @@
-from Adafruit_CharLCD import (
-    LCD_ROW_OFFSETS,
+from RPLCD.common import (
     LCD_MOVERIGHT,
 )
+# from RPCLD.gpio import CharLCD
 
 from .lcd import Lcd
-from .codec import hitachi_utf_map
 
 
 class FakeHw(object):
@@ -14,6 +13,7 @@ class FakeHw(object):
         self.has_outputted = False
         self.rows = rows
         self.cols = cols
+        self.row_offsets = [0x00, 0x40, self.cols, 0x40 + self.cols]
         self.decode_map = hitachi_utf_map()
         self.clear()
 
@@ -129,17 +129,18 @@ class FakeHw(object):
         self.cur_r = row
 
     def cursor(self, arg):
+        # Per Adafruit_CharLCD.LCD_ROW_OFFSETS usage:
         # LCD_SETDDRAMADDR | (col + LCD_ROW_OFFSETS[row]))
-        # LCD_ROW_OFFSETS         = (0x00, 0x40, 0x14, 0x54)
-        # (col + LCD_ROW_OFFSETS[row])
-        if arg >= LCD_ROW_OFFSETS[3]:
-            return self.set_cursor(LCD_ROW_OFFSETS[3] - arg, 3)
-        elif arg < LCD_ROW_OFFSETS[2]:
-            return self.set_cursor(LCD_ROW_OFFSETS[0] - arg, 0)
-        elif arg >= LCD_ROW_OFFSETS[1]:
-            return self.set_cursor(LCD_ROW_OFFSETS[1] - arg, 1)
-        elif arg >= LCD_ROW_OFFSETS[2]:
-            return self.set_cursor(LCD_ROW_OFFSETS[2] - arg, 2)
+        # LCD_ROW_OFFSETS = (0x00, 0x40, 0x14, 0x54)
+        ros = self.row_offsets
+        if arg >= ros[3]:
+            return self.set_cursor(ros[3] - arg, 3)
+        elif arg < ros[2]:
+            return self.set_cursor(ros[0] - arg, 0)
+        elif arg >= ros[1]:
+            return self.set_cursor(ros[1] - arg, 1)
+        elif arg >= ros[2]:
+            return self.set_cursor(ros[2] - arg, 2)
         else:
             raise('Bad cursor pos')
 
