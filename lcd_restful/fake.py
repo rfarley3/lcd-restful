@@ -1,6 +1,7 @@
 # from RPLCD.common import (
 #     LCD_MOVERIGHT,
-# )
+#FakeGpio(),  #  )
+from .codec import hitachi_utf_map
 LCD_MOVERIGHT = 0x04
 
 
@@ -8,6 +9,8 @@ class FakeHw(object):
     def __init__(self, rows=4, cols=20):
         self.rs = False
         self.write4_1 = True
+        self.write1_cnt = 0
+        self.w_cache = {}
         self.has_outputted = False
         self.rows = rows
         self.cols = cols
@@ -52,6 +55,14 @@ class FakeHw(object):
             self.out_clear()
         self.out_draw()
         self.has_outputted = True
+
+    def write1(self, pin, value):
+        self.w_cache[self.write1_cnt] = value
+        self.write1_cnt += 1
+        if self.write1_cnt == 4:
+            self.write1_cnt = 0
+            w = self.w_cache
+            self.write4(w[0], w[1], w[2], w[3])
 
     def write4(self, d4, d5, d6, d7):
         if self.write4_1:
@@ -109,7 +120,8 @@ class FakeHw(object):
         raise('Unexpect command value')
 
     def unhandled_cmd(self, arg):
-        raise('Unhandled, but known, cmd %s' % arg)
+        pass
+        # raise('Unhandled, but known, cmd %s' % arg)
 
     def clear(self, *args):
         self.cur_c = 0
@@ -168,6 +180,11 @@ class FakeHw(object):
 
 
 class FakeGpio(object):
+    # https://sourceforge.net/p/raspberry-gpio-python/code/ci/default/tree/source/common.h
+    # https://sourceforge.net/p/raspberry-gpio-python/code/ci/default/tree/source/c_gpio.h
+    BOARD = 10
+    OUT = 0
+
     def __init__(self):
         self.hw = FakeHw()
         # bc set_pins is called after Lcd.init, rs isn't set
@@ -178,7 +195,18 @@ class FakeGpio(object):
         self._d7 = None
         self._rs = None
         self._en = None
+        # TODO remove after can inject set_pins
+        self._d4 = 23
+        self._d5 = 17
+        self._d6 = 21
+        self._d7 = 22
+        self._rs = 25
+        self._en = 24
 
+    def setmode(self, mode):
+        pass
+
+    # allows LCD to set pins FakeGpio/Hw will use
     def set_pins(self, config):
         self._d4 = config['d4']
         self._d5 = config['d5']
@@ -193,6 +221,10 @@ class FakeGpio(object):
     def output(self, pin, char_mode=False):
         if pin == self._rs:
             self.hw.rs = char_mode
+        bool_val = char_mode
+        data_pins = set([self._d4, self._d5, self._d6, self._d7])
+        if pin in data_pins:
+            self.hw.write1(pin, bool_val)
 
     def output_pins(self, pinnums_to_bools):
         data_pins = set([self._d4, self._d5, self._d6, self._d7])

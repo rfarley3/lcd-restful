@@ -27,6 +27,8 @@ def main(argv):
     # for i, ch in enumerate(HITACHI_CHAR_MAP):
     #     print('%s: %s' % (i, ch))
     lcd.message('Hello\nworld!')
+    return 0
+    # TODO reenable after mock patch works
     pause(lcd, interact)
     lcd.message('1' * 20 + '\n' + '2' * 20 + '\n' + '3' * 20 + '\n' + '4' * 20)
     pause(lcd, interact)
