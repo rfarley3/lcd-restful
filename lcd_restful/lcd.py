@@ -24,6 +24,8 @@ if not on_rpi:
 # else: GPIO = RPi.GPIO
 from RPLCD import CharLCD
 
+from .codec import encode_char
+
 
 class Lcd(CharLCD):
     def __init__(self, fake=False):
@@ -44,23 +46,28 @@ class Lcd(CharLCD):
             auto_linebreaks=False)
 
     def message(self, msg, as_ordinal=False, autowrap=False):
+        if as_ordinal:
+            return self.write_raw(msg)
         restore_autowrap = False
         if self.auto_linebreaks != autowrap:
             self.auto_linebreaks = autowrap
             restore_autowrap = True
-        if not as_ordinal:
-            import sys
-            print('auto: %s, str: %s' % (self.auto_linebreaks, msg), file=sys.stderr)
-            self.write_string(msg)
-        else:
-            if not isinstance(msg, list):
-                msg = [msg]
-            for line in msg:
-                for b in line:
-                    self.write(b)
-                row, col = self.cursor_pos
-                if row < self.lcd.rows - 1:
-                    self.cursor_pos = (row + 1, 0)
+        self.write_utf(msg)
         if restore_autowrap:
             self.auto_linebreaks = not self.auto_linebreaks
+
+    def write_utf(self, msg):
+        # import sys
+        # print('auto: %s, str: %s' % (self.auto_linebreaks, msg), file=sys.stderr)
+        self.write_string(msg)
+
+    def write_raw(self, msg):
+        if not isinstance(msg, list):
+            msg = [msg]
+        for line in msg:
+            for b in line:
+                self.write(b)
+            row, col = self.cursor_pos
+            if row < self.lcd.rows - 1:
+                self.cursor_pos = (row + 1, 0)
 

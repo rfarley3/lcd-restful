@@ -46,12 +46,11 @@ def main(argv):
         lcd.clear()
         lcd.message('Caught long msg')
     pause(lcd, interact)
-    return 0
     lcd.message('Testing message that needs autowrap', autowrap=True)
     pause(lcd, interact)
-    lcd.message('Testing\r\nmessage with\r\ntoo many\r\nlines\r\nshould not see me', autowrap=True)
+    lcd.message('junkkkk\r\nTesting\r\nmessage with\r\ntoo many lines\r\nrolled 1st line', autowrap=True)
     pause(lcd, interact)
-    lcd.message('Testing message by\r\nutf8 strings')
+    lcd.message('Testing utf8 to hitachi-code', autowrap=True)
     pause(lcd, interact)
     test_lines = [
         (' !"#$%&\'()*+,-./\r\n' +
@@ -85,6 +84,7 @@ def main(argv):
     # lcd.blink(False)
     # pause(lcd, interact)
 
+    return 0
     # Demo scrolling message right/left.
     message = 'Scroll'
     lcd.message(message)
