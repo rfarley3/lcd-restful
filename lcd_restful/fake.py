@@ -181,19 +181,16 @@ class FakeHw(object):
         # LCD_DISPLAYCONTROL
         elif (val >> 3) & 0x01 == 1:
             # turn on and off display, show cursor, blink cursor
-            # NOTE assuming it's turning on a blank screen, hidden cursor
-            # return self.unhandled_cmd(val)  # TODO
-            return
+            return self.displayset(val & 0b00000111)
         # LCD_ENTRYMODESET
         elif (val >> 2) & 0x01 == 1:
             # set which way text enters, sets autoscroll
             # NOTE assumes ENTRYLEFT
-            # return self.unhandled_cmd(val)  # skip, too complicated
-            return
+            return self.entryset(val & 0b00000011)
         # LCD_RETURNHOME
         elif (val >> 1) & 0x01 == 1:
             return self.set_cursor(0, 0)
-        raise HwException('Unexpect command value')
+        raise HwException('Unexpected command value')
 
     def unhandled_cmd(self, arg):
         if self.raise_unk:
@@ -230,15 +227,20 @@ class FakeHw(object):
         else:
             raise HwException('Bad cursor pos %s' % arg)
 
-    def funcset(self, val):
+    def funcset(self, arg):
         # self.read_width = 4
-        if val & 0x10 == 0x10:
+        if arg & 0x10 == 0x10:
             self.read_width = 8
-        self.two_line = True  # vs one_line
-        if val & 0x08 != 0x08:
-            raise HwException('Unhandled line mode %s' % (val & 0x08))
-        # LCD_5x10DOTS = 0x04
-        # raise HwException('Parsing funcset %s' % val)
+        self.two_line = True
+        if arg & 0x08 != 0x08:
+            # 1LINE
+            self.two_line = False
+            raise HwException('Unhandled line mode %s' % (arg & 0x08))
+        self.eight_dots = True
+        if arg & 0x04 == 0x04:
+            # 5x10DOTS
+            self.eight_dots = False
+            raise HwException('Unhandled dot height %s' % (arg & 0x04))
 
     def move(self, mv_right):
         if mv_right:
@@ -263,6 +265,31 @@ class FakeHw(object):
                     self.cells[r][c - 1] = self.cells[r][c]
                     del self.cells[r][c]
         self.out_refresh()
+
+    def displayset(self, arg):
+        # NOTE assuming it's turning on a blank screen, hidden cursor
+        # Flags for display on/off control
+        if arg & 0x04 != 0x04:
+            # turn display off
+            self.clear()
+            return
+        if arg & 0x02 == 0x02:
+            # TODO show cursor
+            raise HwException('Unhandled cursor mode %s' % (arg & 0x02))
+        if arg & 0x01 == 0x01:
+            # TODO blink, (what, cursor or text?)
+            raise HwException('Unhandled blink mode %s' % (arg & 0x02))
+
+    def entryset(self, arg):
+        self.entryleft = True
+        if arg & 0x02 != 0x02:
+            self.entryleft = False
+            raise HwException('Unhandled entry direction %s' % (arg & 0x02))
+        self.shiftmode_decr = True  # cursor
+        if arg & 0x01 == 0x01:
+            # display/INCREMENT
+            self.shiftmode_decr = False
+            raise HwException('Unhandled shift mode %s' % (arg & 0x01))
 
 
 class FakeGpio(object):
