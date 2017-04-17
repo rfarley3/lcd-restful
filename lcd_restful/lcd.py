@@ -44,14 +44,23 @@ class Lcd(CharLCD):
             auto_linebreaks=False)
 
     def message(self, msg, as_ordinal=False, autowrap=False):
-        # TODO toggle auto_linebreaks
-        self.auto_linebreaks = autowrap
+        restore_autowrap = False
+        if self.auto_linebreaks != autowrap:
+            self.auto_linebreaks = autowrap
+            restore_autowrap = True
         if not as_ordinal:
-            return self.write_string(msg)
-        for line in msg:
-            for b in line:
-                self.write(b)
-            row, col = self.cursor_pos
-            if row < self.lcd.rows - 1:
-                self.cursor_pos = (row + 1, 0)
+            import sys
+            print('auto: %s, str: %s' % (self.auto_linebreaks, msg), file=sys.stderr)
+            self.write_string(msg)
+        else:
+            if not isinstance(msg, list):
+                msg = [msg]
+            for line in msg:
+                for b in line:
+                    self.write(b)
+                row, col = self.cursor_pos
+                if row < self.lcd.rows - 1:
+                    self.cursor_pos = (row + 1, 0)
+        if restore_autowrap:
+            self.auto_linebreaks = not self.auto_linebreaks
 

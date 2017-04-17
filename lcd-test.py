@@ -40,6 +40,12 @@ def main(argv):
             lines.append(line)
         lcd.message(lines, as_ordinal=True)
         pause(lcd, interact)
+    try:
+        lcd.message('Testing a super long message', autowrap=False)
+    except IndexError:
+        lcd.clear()
+        lcd.message('Caught long msg')
+    pause(lcd, interact)
     return 0
     lcd.message('Testing message that needs autowrap', autowrap=True)
     pause(lcd, interact)
