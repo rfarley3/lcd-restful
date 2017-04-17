@@ -7,10 +7,11 @@ LCD Pinout: https://www.engineersgarage.com/sites/default/files/Lcd_0.jpg
 
 Install dependencies:
 Make sure you are in a Python3 virtualenv
-git clone https://github.com/adafruit/Adafruit_Python_CharLCD.git
-cd Adafruit_Python_CharLCD
-Apply patch (Adafruit_CharLCD.patch in root of this repo)
-pip install .
+# git clone https://github.com/adafruit/Adafruit_Python_CharLCD.git
+# cd Adafruit_Python_CharLCD
+# Apply patch (Adafruit_CharLCD.patch in root of this repo)
+# pip install .
 
-
+Clone git clone git@github.com:dbrgn/RPLCD.git
+Until RPLCD dependency updates from 0.4.0, use repo clone, tested on 3c3a486
 
