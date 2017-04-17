@@ -84,7 +84,6 @@ def main(argv):
     # lcd.blink(False)
     # pause(lcd, interact)
 
-    return 0
     # Demo scrolling message right/left.
     message = 'Scroll'
     lcd.message(message)
