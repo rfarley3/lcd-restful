@@ -19,7 +19,8 @@ class GpioException(FakesException):
 class FakeHw(object):
     def __init__(self, rows=4, cols=20, raise_on_unknown=True):
         self.raise_unk = raise_on_unknown
-        self.reuse = True  # re-use term output (clear before each print)
+        self.reuse = False  # True  # re-use term output (clear before each print)
+        self.initialized = False
         self.pin_map = {
             'd4': 23,
             'd5': 17,
@@ -29,6 +30,12 @@ class FakeHw(object):
             'en': 24}
         self.pins = {}
         self.read_width = 4
+        # Hw detects width during cmd based initialization
+        # however, this object needs to know width before init
+        self.init_cnt = 4
+        if 'd0' in self.pin_map:
+            self.init_cnt = 3
+            self.read_width = 8
         self.write4_1 = True
         self.has_outputted = False
         self.rows = rows
@@ -125,8 +132,15 @@ class FakeHw(object):
         # If RS is HIGH, then it is a char, else command
         if self.pins[self.pin_map['rs']]:
             self.write8_chr(full_word)
+        elif not self.initialized:
+            self.initialize(full_word)
         else:
             self.write8_cmd(full_word)
+
+    def initialize(self, val):
+        self.init_cnt -= 1
+        if self.init_cnt == 0:
+            self.initialized = True
 
     def write8_chr(self, char_val):
         # import sys
@@ -153,7 +167,8 @@ class FakeHw(object):
         # LCD_FUNCTIONSET
         elif (val >> 5) & 0x01 == 1:
             # sets write bit width
-            return self.funcset(val)
+            # return self.unhandled_cmd(val)
+            return self.funcset(val & 0b00011111)
         # LCD_CURSORSHIFT
         elif (val >> 4) & 0x01 == 1:
             # LCD_DISPLAYMOVE
@@ -214,10 +229,14 @@ class FakeHw(object):
             raise LcdHwException('Bad cursor pos %s' % arg)
 
     def funcset(self, val):
-        # (val >> 5) & 0x01 == 1:
-        # skip, only seen at init
-        # TODO assumes 4 bit read width
-        self.read_width = 4
+        # self.read_width = 4
+        if val & 0x10 == 0x10:
+            self.read_width = 8
+        self.two_line = True  # vs one_line
+        if val & 0x08 != 0x08:
+            raise LcdHwException('Unhandled line mode %s' % (val & 0x08))
+        # LCD_5x10DOTS = 0x04
+        # raise LcdHwException('Parsing funcset %s' % val)
 
     def move(self, mv_right):
         if mv_right:

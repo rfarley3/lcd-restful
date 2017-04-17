@@ -1,10 +1,4 @@
-on_rpi = True
-# GPIO = None
-try:
-    import RPi.GPIO
-except ImportError:
-    on_rpi = False
-if not on_rpi:
+def patch_fake_gpio():
     print('Warning, not in RPi, using mock GPIO')
     import mock
     # Mock RPi.GPIO module (https://m.reddit.com/r/Python/comments/5eddp5/mock_testing_rpigpio/)
@@ -18,38 +12,36 @@ if not on_rpi:
     }
     patcher = mock.patch.dict('sys.modules', modules)
     patcher.start()
+
+on_rpi = True
+# GPIO = None
+try:
+    import RPi.GPIO
+except ImportError:
+    on_rpi = False
+if not on_rpi:
+    patch_fake_gpio()
 # else: GPIO = RPi.GPIO
 from RPLCD import CharLCD
-from RPLCD import Alignment
 
 
 class Lcd(CharLCD):
-    config = {
-        'cols': 20,
-        'rows': 4,
-        'rs': 25,  # LCD Pin 4
-        'en': 24,  # -       6
-        'd4': 23,  # -      11
-        'd5': 17,  # -      12
-        'd6': 21,  # -      13
-        'd7': 22,  # -      14
-        'linebreaks': False}
-
-    def __init__(self, config={}, fake=False):
-        self.config.update(config)
+    def __init__(self, fake=False):
+        if fake and on_rpi:
+            patch_fake_gpio()
         super(Lcd, self).__init__(
-            pin_rs=self.config['rs'],
-            pin_rw=self.config.get('rw'),
-            pin_e=self.config['en'],
+            rows=4,
+            cols=20,
+            pin_rs=25,    # 4
+            pin_rw=None,  # 5
+            pin_e=24,     # 6
             pins_data=[
-                self.config['d4'],
-                self.config['d5'],
-                self.config['d6'],
-                self.config['d7']],
-            pin_backlight=self.config.get('backlight'),
-            rows=self.config.get('rows'),
-            cols=self.config.get('cols'),
-            auto_linebreaks=self.config.get('linebreaks'))
+                23,   # d4 11
+                17,   # d5 12
+                21,   # d6 13
+                22],  # d7 14
+            pin_backlight=None,
+            auto_linebreaks=False)
 
     def message(self, msg, as_ordinal=False, autowrap=False):
         # TODO toggle auto_linebreaks
