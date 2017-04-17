@@ -6,11 +6,24 @@ LCD_MOVERIGHT = 0x04
 
 
 class FakeHw(object):
-    def __init__(self, rows=4, cols=20):
-        self.rs = False
+    def __init__(self, rows=4, cols=20, raise_on_unknown=False):
+        self.raise_unk = raise_on_unknown
+        # self.pin_map = {
+        #     23: 'd4',
+        #     17: 'd5',
+        #     21: 'd6'.
+        #     22: 'd7',
+        #     25: 'rs',
+        #     24: 'en'}
+        self.pin_map = {
+            'd4': 23,
+            'd5': 17,
+            'd6': 21,
+            'd7': 22,
+            'rs': 25,
+            'en': 24}
+        self.pins = {}
         self.write4_1 = True
-        self.write1_cnt = 0
-        self.w_cache = {}
         self.has_outputted = False
         self.rows = rows
         self.cols = cols
@@ -56,13 +69,17 @@ class FakeHw(object):
         self.out_draw()
         self.has_outputted = True
 
-    def write1(self, pin, value):
-        self.w_cache[self.write1_cnt] = value
-        self.write1_cnt += 1
-        if self.write1_cnt == 4:
-            self.write1_cnt = 0
-            w = self.w_cache
-            self.write4(w[0], w[1], w[2], w[3])
+    def _set(self, pin, value):
+        # only handles a bool value
+        old_val = self.pins.get(pin)
+        self.pins[pin] = value
+        if pin == self.pin_map['en']:
+            if old_val is 0 and value is 1:
+                d4 = self.pins[self.pin_map['d4']]
+                d5 = self.pins[self.pin_map['d5']]
+                d6 = self.pins[self.pin_map['d6']]
+                d7 = self.pins[self.pin_map['d7']]
+                self.write4(d4, d5, d6, d7)
 
     def write4(self, d4, d5, d6, d7):
         if self.write4_1:
@@ -73,7 +90,7 @@ class FakeHw(object):
         val = self.upper | lower
         self.write4_1 = True
         self.upper = None
-        if self.rs:
+        if self.pins[self.pin_map['rs']]:
             self.write8_chr(val)
             return
         self.write8_cmd(val)
@@ -120,8 +137,8 @@ class FakeHw(object):
         raise('Unexpect command value')
 
     def unhandled_cmd(self, arg):
-        pass
-        # raise('Unhandled, but known, cmd %s' % arg)
+        if self.raise_unk:
+            raise('Unhandled, but known, cmd %s' % arg)
 
     def clear(self, *args):
         self.cur_c = 0
@@ -182,49 +199,40 @@ class FakeHw(object):
 class FakeGpio(object):
     # https://sourceforge.net/p/raspberry-gpio-python/code/ci/default/tree/source/common.h
     # https://sourceforge.net/p/raspberry-gpio-python/code/ci/default/tree/source/c_gpio.h
+    MODE_UNKNOWN = -1
     BOARD = 10
+    BCM = 11
     OUT = 0
+    IN = 1
+    LOW = 0
+    HIGH = 1
 
     def __init__(self):
         self.hw = FakeHw()
-        # bc set_pins is called after Lcd.init, rs isn't set
-        # when Lcd.init calls self.clear. you can't intercept it.
-        self._d4 = None
-        self._d5 = None
-        self._d6 = None
-        self._d7 = None
-        self._rs = None
-        self._en = None
-        # TODO remove after can inject set_pins
-        self._d4 = 23
-        self._d5 = 17
-        self._d6 = 21
-        self._d7 = 22
-        self._rs = 25
-        self._en = 24
+        self.numbering = self.MODE_UNKNOWN
+        self.modes = {}
+        self.pins = {}
 
     def setmode(self, mode):
-        pass
+        if mode != self.BOARD:
+            raise('Unhandled pin numbering mode')
 
-    # allows LCD to set pins FakeGpio/Hw will use
-    def set_pins(self, config):
-        self._d4 = config['d4']
-        self._d5 = config['d5']
-        self._d6 = config['d6']
-        self._d7 = config['d7']
-        self._rs = config['rs']
-        self._en = config['en']
+    def cleanup(self):
+        pass
 
     def setup(self, pin, mode):
-        pass
+        # verify possible modes
+        self.modes[pin] = mode
+        self._set(pin, self.LOW)
 
-    def output(self, pin, char_mode=False):
-        if pin == self._rs:
-            self.hw.rs = char_mode
-        bool_val = char_mode
-        data_pins = set([self._d4, self._d5, self._d6, self._d7])
-        if pin in data_pins:
-            self.hw.write1(pin, bool_val)
+    def _set(self, pin, value):
+        # verify possible values
+        self.pins[pin] = value
+        self.hw._set(pin, value)
+
+    def output(self, pin, value):
+        # Verify pin mode is output
+        self._set(pin, value)
 
     def output_pins(self, pinnums_to_bools):
         data_pins = set([self._d4, self._d5, self._d6, self._d7])

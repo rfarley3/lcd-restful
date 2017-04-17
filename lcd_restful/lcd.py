@@ -49,9 +49,6 @@ class Lcd(CharLCD):
             rows=self.config.get('rows'),
             cols=self.config.get('cols'),
             auto_linebreaks=self.config.get('linebreaks'))
-        # pins are set by Lcd.__init__, so have to wait until now to set them within FakeGpio
-        if fake or not on_rpi:
-            GPIO.set_pins(self.config)
 
     def message(self, msg, as_ordinal=False, autowrap=False):
         # TODO toggle auto_linebreaks
