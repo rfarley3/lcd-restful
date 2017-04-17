@@ -4,7 +4,7 @@ def patch_fake_gpio():
     # Mock RPi.GPIO module (https://m.reddit.com/r/Python/comments/5eddp5/mock_testing_rpigpio/)
     MockRPi = mock.MagicMock()
     from .fake import FakeGpio
-    GPIO = FakeGpio()
+    GPIO = FakeGpio(compact=False)
     MockRPi.GPIO = GPIO
     modules = {
         'RPi': MockRPi,

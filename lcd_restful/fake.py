@@ -17,9 +17,9 @@ class GpioException(FakesException):
 
 
 class FakeHw(object):
-    def __init__(self, rows=4, cols=20, raise_on_unknown=True):
+    def __init__(self, rows=4, cols=20, raise_on_unknown=True, compact=True):
         self.raise_unk = raise_on_unknown
-        self.reuse = True  # re-use term output (clear before each print)
+        self.reuse = compact  # re-use term output (clear before each print)
         self.initialized = False
         self.pin_map = {
             'd4': 23,
@@ -276,10 +276,10 @@ class FakeGpio(object):
     LOW = 0
     HIGH = 1
 
-    def __init__(self, hw=None):
+    def __init__(self, hw=None, **kwargs):
         self.hw = hw
         if self.hw is None:
-            self.hw = FakeHw()
+            self.hw = FakeHw(**kwargs)
         self.numbering = self.MODE_UNKNOWN
         self.modes = {}
         self.pins = {}
