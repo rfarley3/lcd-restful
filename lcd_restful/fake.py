@@ -7,6 +7,7 @@ LCD_MOVERIGHT = 0x04
 class FakeHw(object):
     def __init__(self, rows=4, cols=20, raise_on_unknown=True):
         self.raise_unk = raise_on_unknown
+        self.reuse = True  # re-use term output (clear before each print)
         self.pin_map = {
             'd4': 23,
             'd5': 17,
@@ -56,9 +57,8 @@ class FakeHw(object):
 
     def out_refresh(self):
         # TODO allow refreshing single cells, or range of cells
-        if self.has_outputted:
-            pass
-            # self.out_clear()
+        if self.has_outputted and self.reuse:
+            self.out_clear()
         self.out_draw()
         self.has_outputted = True
 
@@ -89,6 +89,8 @@ class FakeHw(object):
         self.write8_cmd(val)
 
     def write8_chr(self, char_val):
+        # import sys
+        # print('write_at %s %s\n' % (self.cur_c, self.cur_r), file=sys.stderr)
         mapped_char = self.decode_map.get(char_val)
         self.cells[self.cur_r][self.cur_c] = mapped_char
         self.cur_c += 1
@@ -145,13 +147,12 @@ class FakeHw(object):
         self.cells = {}
         for r in range(self.rows):
             self.cells[r] = {}
-            # get(, ' ') allows us to skip:
-            # for c in range(self.cols):
-            #     self.cells[r][c] = ' '
+            # get(, ' ') allows us to skip setting all to ' '
         self.out_refresh()
 
     def set_cursor(self, col, row):
-        # print('set_cursor %s %s\n' % (col, row))
+        # import sys
+        # print('set_cursor %s %s\n' % (col, row), file=sys.stderr)
         self.cur_c = col
         self.cur_r = row
 
