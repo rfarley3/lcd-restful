@@ -22,7 +22,7 @@ def main(argv):
     if '-f' in argv or '--fake' in argv:
         use_fake = True
     lcd = Lcd(fake=use_fake)
-    lcd.message('Hello\r\nworld!')
+    lcd.message('Hello\nworld\r\n!!!!!!!!!!')
     pause(lcd, interact)
     lcd.message('1' * 20 + '\r\n' + '2' * 20 + '\r\n' + '3' * 20 + '\r\n' + '4' * 20)
     pause(lcd, interact)
