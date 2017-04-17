@@ -5,7 +5,7 @@ LCD_MOVERIGHT = 0x04
 
 
 class FakeHw(object):
-    def __init__(self, rows=4, cols=20, raise_on_unknown=False):
+    def __init__(self, rows=4, cols=20, raise_on_unknown=True):
         self.raise_unk = raise_on_unknown
         self.pin_map = {
             'd4': 23,
@@ -57,7 +57,8 @@ class FakeHw(object):
     def out_refresh(self):
         # TODO allow refreshing single cells, or range of cells
         if self.has_outputted:
-            self.out_clear()
+            pass
+            # self.out_clear()
         self.out_draw()
         self.has_outputted = True
 
@@ -107,7 +108,9 @@ class FakeHw(object):
             return self.unhandled_cmd(val)  # TODO
         # LCD_FUNCTIONSET
         elif (val >> 5) & 0x01 == 1:
-            return self.unhandled_cmd(val)  # skip, only seen at init
+            # sets write bit width, NOTE assumes 4
+            return
+            # return self.unhandled_cmd(val)  # skip, only seen at init
         # LCD_CURSORSHIFT
         elif (val >> 4) & 0x01 == 1:
             # LCD_DISPLAYMOVE
@@ -118,11 +121,15 @@ class FakeHw(object):
         # LCD_DISPLAYCONTROL
         elif (val >> 3) & 0x01 == 1:
             # turn on and off display, show cursor, blink cursor
-            return self.unhandled_cmd(val)  # TODO
+            # NOTE assuming it's turning on a blank screen, hidden cursor
+            # return self.unhandled_cmd(val)  # TODO
+            return
         # LCD_ENTRYMODESET
         elif (val >> 2) & 0x01 == 1:
             # set which way text enters, sets autoscroll
-            return self.unhandled_cmd(val)  # skip, too complicated
+            # NOTE assumes ENTRYLEFT
+            # return self.unhandled_cmd(val)  # skip, too complicated
+            return
         # LCD_RETURNHOME
         elif (val >> 1) & 0x01 == 1:
             return self.set_cursor(0, 0)
@@ -144,6 +151,7 @@ class FakeHw(object):
         self.out_refresh()
 
     def set_cursor(self, col, row):
+        # print('set_cursor %s %s\n' % (col, row))
         self.cur_c = col
         self.cur_r = row
 
@@ -222,10 +230,12 @@ class FakeGpio(object):
         self.pins[pin] = value
         self.hw._set(pin, value)
 
+    # Called by Adafruit and RPLCD API
     def output(self, pin, value):
-        # Verify pin mode is output
+        # Verify setup/pin mode is output
         self._set(pin, value)
 
+    # Called by Adafruit API
     def output_pins(self, pinnums_to_bools):
         data_pins = set([self._d4, self._d5, self._d6, self._d7])
         if set(pinnums_to_bools.keys()) != data_pins:

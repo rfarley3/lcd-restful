@@ -33,7 +33,7 @@ class Lcd(CharLCD):
         'd5': 17,  # -      12
         'd6': 21,  # -      13
         'd7': 22,  # -      14
-        'linebreaks': True}
+        'linebreaks': False}
 
     def __init__(self, config={}, fake=False):
         self.config.update(config)
@@ -53,6 +53,7 @@ class Lcd(CharLCD):
 
     def message(self, msg, as_ordinal=False, autowrap=False):
         # TODO toggle auto_linebreaks
+        self.auto_linebreaks = autowrap
         if not as_ordinal:
             return self.write_string(msg)
         for line in msg:
