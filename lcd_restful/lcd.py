@@ -1,82 +1,84 @@
-from Adafruit_CharLCD import Adafruit_CharLCD as AdaLcd
-from Adafruit_CharLCD import LCD_ENTRYLEFT
-# patch bc Ada lib can't detect RPi Zero W chipset
-import Adafruit_GPIO.GPIO as GPIO
+def patch_fake_gpio():
+    print('Warning, not in RPi, using mock GPIO')
+    import mock
+    # Mock RPi.GPIO module (https://m.reddit.com/r/Python/comments/5eddp5/mock_testing_rpigpio/)
+    MockRPi = mock.MagicMock()
+    from .gpio import FakeGpio
+    GPIO = FakeGpio(compact=True)
+    MockRPi.GPIO = GPIO
+    modules = {
+        'RPi': MockRPi,
+        'RPi.GPIO': MockRPi.GPIO,
+    }
+    patcher = mock.patch.dict('sys.modules', modules)
+    patcher.start()
+
 on_rpi = True
+# GPIO = None
 try:
     import RPi.GPIO
-except:
+except ImportError:
     on_rpi = False
+if not on_rpi:
+    patch_fake_gpio()
+# else: GPIO = RPi.GPIO
+from RPLCD import CharLCD
 
 from .codec import encode_char
 
 
-class Lcd(AdaLcd):
-    config = {
-        'cols': 20,
-        'rows': 4,
-        'pwm': None,
-        'rs': 25,  # LCD Pin 4
-        'en': 24,  # -       6
-        'd4': 23,  # -      11
-        'd5': 17,  # -      12
-        'd6': 21,  # -      13
-        'd7': 22,  # -      14
-    }
-
-    def __init__(self, config={}):
-        self.config.update(config)
-        gpio = self.config.get('gpio')
-        if gpio is None and on_rpi:
-            gpio = GPIO.RPiGPIOAdapter(RPi.GPIO)
+class Lcd(CharLCD):
+    def __init__(self, fake=False):
+        if fake and on_rpi:
+            patch_fake_gpio()
         super(Lcd, self).__init__(
-            self.config['rs'],
-            self.config['en'],
-            self.config['d4'],
-            self.config['d5'],
-            self.config['d6'],
-            self.config['d7'],
-            self.config['cols'],
-            self.config['rows'],
-            backlight=self.config.get('backlight'),
-            gpio=gpio,
-            pwm=self.config.get('pwm'))
+            rows=4,
+            cols=20,
+            pin_rs=25,    # 4
+            pin_rw=None,  # 5
+            pin_e=24,     # 6
+            pins_data=[
+                23,   # d4 11
+                17,   # d5 12
+                21,   # d6 13
+                22],  # d7 14
+            pin_backlight=None,
+            auto_linebreaks=False)
 
-    def message(self, text, as_ordinal=False, autowrap=False):
-        """Write text to display.  Note that text can include newlines."""
-        # as_ordinal write8s each char as an int (ie passes bytes directly through)
-        #     it assumes that each line is its own element in a list
-        # not as_original treats each char as utf8 and decodes it
-        #     it assumes input is a string and splits on newlines
-        #     append an empty list in place of a trailing newline (so cursor is at entry)
-        if not as_ordinal:
-            text = text.split('\n')
-        if not isinstance(text, list):
-            text = [text]
-        if autowrap:
-            # TODO consider textwrap package
-            text_tmp = []
-            for t in text:
-                while len(t) > self._cols:
-                    text_tmp.append(t[:self._cols])
-                    t = t[self._cols:]
-                text_tmp.append(t)
-            text = text_tmp
-        # auto cut off too tall of messages
-        text = text[:self._lines]
-        # print('writing msg %s' % text)
-        for i, line in enumerate(text):
-            # Advance to next line if character is a new line.
-            if i > 0:
-                # Move to left or right side depending on text direction.
-                col = 0 if self.displaymode & LCD_ENTRYLEFT > 0 else self._cols-1
-                self.set_cursor(col, i)
-            # Iterate through each character.
-            for char in line:
-                # Write the character to the display.
-                # print('writing %s' % char)
-                if as_ordinal:
-                    char = ord(char)
-                else:
-                    char = encode_char(char)
-                self.write8(char, True)
+    # For Adafruit lib compat
+    def message(self, msg, as_ordinal=False, autowrap=False):
+        if as_ordinal:
+            return self.write_raw(msg)
+        self.write_utf(msg, autowrap)
+
+    def write_utf(self, msg, autowrap=False):
+        for utfc in msg:
+            if utfc == '\n':
+                self.row_inc(keep_col=True)
+            elif utfc == '\r':
+                row, _ = self.cursor_pos
+                self.cursor_pos = (row, 0)
+            else:
+                self.write(encode_char(utfc))
+                if autowrap:
+                    row, col = self.cursor_pos
+                    if col >= self.lcd.cols:
+                        self.row_inc()
+
+    def write_raw(self, msg):
+        if not isinstance(msg, list):
+            msg = [msg]
+        for line in msg:
+            for b in line:
+                self.write(b)
+            self.row_inc()
+
+    def row_inc(self, keep_col=False):
+        row, col = self.cursor_pos
+        if not keep_col:
+            col = 0
+        if row < self.lcd.rows - 1:
+            self.cursor_pos = (row + 1, col)
+        else:
+            self.cursor_pos = (0, col)
+

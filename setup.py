@@ -14,7 +14,7 @@ setup(
     keywords=['lcd', 'rpi', 'hd44780'],
     classifiers=[],
     install_requires=[
-        'Adafruit_CharLCD',
+        'rplcd',
         'requests',
         'bottle',
         'jsonpickle'
