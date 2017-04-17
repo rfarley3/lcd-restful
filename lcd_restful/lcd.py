@@ -51,5 +51,7 @@ class Lcd(CharLCD):
         for line in msg:
             for b in line:
                 self.write(b)
-            # TODO adjust row number
+            row, col = self.cursor_pos
+            if row < self.lcd.rows - 1:
+                self.cursor_pos = (row + 1, 0)
 
