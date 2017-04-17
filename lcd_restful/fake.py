@@ -8,7 +8,7 @@ class FakesException(BaseException):
     pass
 
 
-class LcdHwException(FakesException):
+class HwException(FakesException):
     pass
 
 
@@ -19,7 +19,7 @@ class GpioException(FakesException):
 class FakeHw(object):
     def __init__(self, rows=4, cols=20, raise_on_unknown=True):
         self.raise_unk = raise_on_unknown
-        self.reuse = False  # True  # re-use term output (clear before each print)
+        self.reuse = True  # re-use term output (clear before each print)
         self.initialized = False
         self.pin_map = {
             'd4': 23,
@@ -138,6 +138,8 @@ class FakeHw(object):
             self.write8_cmd(full_word)
 
     def initialize(self, val):
+        if val not in [0x03, 0x30, 0x02]:
+            raise HwException('Invalid cmd based init insn, is API odd?')
         self.init_cnt -= 1
         if self.init_cnt == 0:
             self.initialized = True
@@ -191,11 +193,11 @@ class FakeHw(object):
         # LCD_RETURNHOME
         elif (val >> 1) & 0x01 == 1:
             return self.set_cursor(0, 0)
-        raise LcdHwException('Unexpect command value')
+        raise HwException('Unexpect command value')
 
     def unhandled_cmd(self, arg):
         if self.raise_unk:
-            raise LcdHwException('Unhandled, but known, cmd %s' % arg)
+            raise HwException('Unhandled, but known, cmd %s' % arg)
 
     def clear(self, *args):
         self.cur_c = 0
@@ -226,7 +228,7 @@ class FakeHw(object):
         elif arg >= ros[2]:
             return self.set_cursor(ros[2] - arg, 2)
         else:
-            raise LcdHwException('Bad cursor pos %s' % arg)
+            raise HwException('Bad cursor pos %s' % arg)
 
     def funcset(self, val):
         # self.read_width = 4
@@ -234,9 +236,9 @@ class FakeHw(object):
             self.read_width = 8
         self.two_line = True  # vs one_line
         if val & 0x08 != 0x08:
-            raise LcdHwException('Unhandled line mode %s' % (val & 0x08))
+            raise HwException('Unhandled line mode %s' % (val & 0x08))
         # LCD_5x10DOTS = 0x04
-        # raise LcdHwException('Parsing funcset %s' % val)
+        # raise HwException('Parsing funcset %s' % val)
 
     def move(self, mv_right):
         if mv_right:
