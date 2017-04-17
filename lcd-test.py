@@ -29,11 +29,11 @@ def main(argv):
     lcd.write_string('Hello\r\nworld!')
     pause(lcd, interact)
     lcd.message('Hello\r\nworld!')
-    return 0
     # TODO reenable after mock patch works
     pause(lcd, interact)
-    lcd.message('1' * 20 + '\n' + '2' * 20 + '\n' + '3' * 20 + '\n' + '4' * 20)
+    lcd.message('1' * 20 + '\r\n' + '2' * 20 + '\r\n' + '3' * 20 + '\r\n' + '4' * 20)
     pause(lcd, interact)
+    return 0
     # Show all possible characters on display
     i = 0
     while i < 256:
@@ -50,22 +50,22 @@ def main(argv):
         pause(lcd, interact)
     lcd.message('Testing message that needs autowrap', autowrap=True)
     pause(lcd, interact)
-    lcd.message('Testing\nmessage with\ntoo many\nlines\nshould not see me', autowrap=True)
+    lcd.message('Testing\r\nmessage with\r\ntoo many\r\nlines\r\nshould not see me', autowrap=True)
     pause(lcd, interact)
-    lcd.message('Testing message by\nutf8 strings')
+    lcd.message('Testing message by\r\nutf8 strings')
     pause(lcd, interact)
     test_lines = [
-        (' !"#$%&\'()*+,-./\n' +
-         '0123456789:;<=>?\n' +
-         '@ABCDEFGHIJKLMNO\n' +
+        (' !"#$%&\'()*+,-./\r\n' +
+         '0123456789:;<=>?\r\n' +
+         '@ABCDEFGHIJKLMNO\r\n' +
          'PQRSTUVWXYZ[¥]^_'),
-        ('`abcdefghijklmno\n' +
+        ('`abcdefghijklmno\r\n' +
          'pqrstuvwxyz{|}→←)'),
-        (' ｡｢｣､･ｦｧｨｩｪｫｬｭｮｯ\n' +
-         'ｰｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿ\n' +
-         'ﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏ\n' +
+        (' ｡｢｣､･ｦｧｨｩｪｫｬｭｮｯ\r\n' +
+         'ｰｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿ\r\n' +
+         'ﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏ\r\n' +
          'ﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ゛゜'),
-        ('αäβεμσρg√⁻jˣ¢£ñö\n' +
+        ('αäβεμσρg√⁻jˣ¢£ñö\r\n' +
          'pqθ∞ΩüΣπxy千万円÷ █')]
     for l in test_lines:
         lcd.message(l)
