@@ -45,21 +45,25 @@ class Lcd(CharLCD):
             pin_backlight=None,
             auto_linebreaks=False)
 
+    # For Adafruit lib compat
     def message(self, msg, as_ordinal=False, autowrap=False):
         if as_ordinal:
             return self.write_raw(msg)
-        restore_autowrap = False
-        if self.auto_linebreaks != autowrap:
-            self.auto_linebreaks = autowrap
-            restore_autowrap = True
-        self.write_utf(msg)
-        if restore_autowrap:
-            self.auto_linebreaks = not self.auto_linebreaks
+        self.write_utf(msg, autowrap)
 
-    def write_utf(self, msg):
-        # import sys
-        # print('auto: %s, str: %s' % (self.auto_linebreaks, msg), file=sys.stderr)
-        self.write_string(msg)
+    def write_utf(self, msg, autowrap=False):
+        for utfc in msg:
+            if utfc == '\n':
+                self.row_inc(keep_col=True)
+            elif utfc == '\r':
+                row, _ = self.cursor_pos
+                self.cursor_pos = (row, 0)
+            else:
+                self.write(encode_char(utfc))
+                if autowrap:
+                    row, col = self.cursor_pos
+                    if col >= self.lcd.cols:
+                        self.row_inc()
 
     def write_raw(self, msg):
         if not isinstance(msg, list):
@@ -67,7 +71,14 @@ class Lcd(CharLCD):
         for line in msg:
             for b in line:
                 self.write(b)
-            row, col = self.cursor_pos
-            if row < self.lcd.rows - 1:
-                self.cursor_pos = (row + 1, 0)
+            self.row_inc()
+
+    def row_inc(self, keep_col=False):
+        row, col = self.cursor_pos
+        if not keep_col:
+            col = 0
+        if row < self.lcd.rows - 1:
+            self.cursor_pos = (row + 1, col)
+        else:
+            self.cursor_pos = (0, col)
 
