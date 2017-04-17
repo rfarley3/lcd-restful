@@ -1,5 +1,5 @@
 on_rpi = True
-GPIO = None
+# GPIO = None
 try:
     import RPi.GPIO
 except ImportError:
@@ -18,6 +18,7 @@ if not on_rpi:
     }
     patcher = mock.patch.dict('sys.modules', modules)
     patcher.start()
+# else: GPIO = RPi.GPIO
 from RPLCD import CharLCD
 from RPLCD import Alignment
 
@@ -58,16 +59,4 @@ class Lcd(CharLCD):
             for b in line:
                 self.write(b)
             # TODO adjust row number
-
-
-# class FakeLcd(Lcd):
-#     def __init__(self, config={}):
-#         self.fake_gpio = FakeGpio()
-#         config.update({'gpio': self.fake_gpio})
-#         super(FakeLcdApi, self).__init__(config)
-#         # pins are set by Lcd.__init__, so have to wait until now to set them within FakeGpio
-#         self._gpio.set_pins(self.config)
-#
-#     def _pulse_enable(self):
-#         pass
 

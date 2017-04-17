@@ -1,6 +1,5 @@
 # from RPLCD.common import (
 #     LCD_MOVERIGHT,
-#FakeGpio(),  #  )
 from .codec import hitachi_utf_map
 LCD_MOVERIGHT = 0x04
 
@@ -8,13 +7,6 @@ LCD_MOVERIGHT = 0x04
 class FakeHw(object):
     def __init__(self, rows=4, cols=20, raise_on_unknown=False):
         self.raise_unk = raise_on_unknown
-        # self.pin_map = {
-        #     23: 'd4',
-        #     17: 'd5',
-        #     21: 'd6'.
-        #     22: 'd7',
-        #     25: 'rs',
-        #     24: 'en'}
         self.pin_map = {
             'd4': 23,
             'd5': 17,
