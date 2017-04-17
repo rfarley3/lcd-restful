@@ -4,6 +4,18 @@ from .codec import hitachi_utf_map
 LCD_MOVERIGHT = 0x04
 
 
+class FakesException(BaseException):
+    pass
+
+
+class LcdHwException(FakesException):
+    pass
+
+
+class GpioException(FakesException):
+    pass
+
+
 class FakeHw(object):
     def __init__(self, rows=4, cols=20, raise_on_unknown=True):
         self.raise_unk = raise_on_unknown
@@ -16,6 +28,7 @@ class FakeHw(object):
             'rs': 25,
             'en': 24}
         self.pins = {}
+        self.read_width = 4
         self.write4_1 = True
         self.has_outputted = False
         self.rows = rows
@@ -41,6 +54,7 @@ class FakeHw(object):
 
     # override if output type changes (like a file)
     def out_clear(self):
+        """Erase terminal screen area"""
         tot_r = self.rows + 2
         tot_c = self.cols + 2
         for r in range(tot_r):
@@ -53,6 +67,7 @@ class FakeHw(object):
 
     # override if output type changes (like a file)
     def out_draw(self):
+        """Output matrix of chars to terminal screen area"""
         print(self)
 
     def out_refresh(self):
@@ -63,36 +78,63 @@ class FakeHw(object):
         self.has_outputted = True
 
     def _set(self, pin, value):
+        """Gpio.output/_set will call this to give HW a trigger to read"""
         # only handles a bool value
         old_val = self.pins.get(pin)
         self.pins[pin] = value
         if pin == self.pin_map['en']:
             if old_val is 0 and value is 1:
-                d4 = self.pins[self.pin_map['d4']]
-                d5 = self.pins[self.pin_map['d5']]
-                d6 = self.pins[self.pin_map['d6']]
-                d7 = self.pins[self.pin_map['d7']]
-                self.write4(d4, d5, d6, d7)
+                self.read()
 
-    def write4(self, d4, d5, d6, d7):
+    def read(self):
+        d7 = self.get_pin('d7')
+        d6 = self.get_pin('d6')
+        d5 = self.get_pin('d5')
+        d4 = self.get_pin('d4')
+        half_word = (d7 << 3 | d6 << 2 | d5 << 1 | d4)
+        if self.read_width == 4:
+            self.write4(half_word)
+            return
+        # if read_width == 8, get full word
+        d3 = self.get_pin('d3')
+        d2 = self.get_pin('d2')
+        d1 = self.get_pin('d1')
+        d0 = self.get_pin('d0')
+        lower_word = (d3 << 3 | d2 << 2 | d1 << 1 | d0)
+        full_word = half_word | lower_word
+        self.write8(full_word)
+
+    def get_pin(self, name):
+        pin_num = self.pin_map.get(name)
+        if pin_num is None:
+            return 0
+        return self.pins.get(pin_num, 0)
+
+    def write4(self, half_word):
+        """We get 4b at a time, combine each pair for 8b"""
         if self.write4_1:
-            self.upper = (d7 << 7 | d6 << 6 | d5 << 5 | d4 << 4)
+            self.upper = half_word << 4
             self.write4_1 = False
             return
-        lower = (d7 << 3 | d6 << 2 | d5 << 1 | d4)
-        val = self.upper | lower
+        full_word = self.upper | half_word
         self.write4_1 = True
         self.upper = None
+        self.write8(full_word)
+
+    def write8(self, full_word):
+        # If RS is HIGH, then it is a char, else command
         if self.pins[self.pin_map['rs']]:
-            self.write8_chr(val)
-            return
-        self.write8_cmd(val)
+            self.write8_chr(full_word)
+        else:
+            self.write8_cmd(full_word)
 
     def write8_chr(self, char_val):
         # import sys
         # print('write_at %s %s\n' % (self.cur_c, self.cur_r), file=sys.stderr)
         mapped_char = self.decode_map.get(char_val)
         self.cells[self.cur_r][self.cur_c] = mapped_char
+        # it appears that the LCD increments its cursor per char
+        # unknown how it handles when max col is reached
         self.cur_c += 1
         self.out_refresh()
 
@@ -110,9 +152,8 @@ class FakeHw(object):
             return self.unhandled_cmd(val)  # TODO
         # LCD_FUNCTIONSET
         elif (val >> 5) & 0x01 == 1:
-            # sets write bit width, NOTE assumes 4
-            return
-            # return self.unhandled_cmd(val)  # skip, only seen at init
+            # sets write bit width
+            return self.funcset(val)
         # LCD_CURSORSHIFT
         elif (val >> 4) & 0x01 == 1:
             # LCD_DISPLAYMOVE
@@ -135,11 +176,11 @@ class FakeHw(object):
         # LCD_RETURNHOME
         elif (val >> 1) & 0x01 == 1:
             return self.set_cursor(0, 0)
-        raise('Unexpect command value')
+        raise LcdHwException('Unexpect command value')
 
     def unhandled_cmd(self, arg):
         if self.raise_unk:
-            raise('Unhandled, but known, cmd %s' % arg)
+            raise LcdHwException('Unhandled, but known, cmd %s' % arg)
 
     def clear(self, *args):
         self.cur_c = 0
@@ -170,7 +211,13 @@ class FakeHw(object):
         elif arg >= ros[2]:
             return self.set_cursor(ros[2] - arg, 2)
         else:
-            raise('Bad cursor pos')
+            raise LcdHwException('Bad cursor pos %s' % arg)
+
+    def funcset(self, val):
+        # (val >> 5) & 0x01 == 1:
+        # skip, only seen at init
+        # TODO assumes 4 bit read width
+        self.read_width = 4
 
     def move(self, mv_right):
         if mv_right:
@@ -208,44 +255,54 @@ class FakeGpio(object):
     LOW = 0
     HIGH = 1
 
-    def __init__(self):
-        self.hw = FakeHw()
+    def __init__(self, hw=None):
+        self.hw = hw
+        if self.hw is None:
+            self.hw = FakeHw()
         self.numbering = self.MODE_UNKNOWN
         self.modes = {}
         self.pins = {}
 
-    def setmode(self, mode):
-        if mode != self.BOARD:
-            raise('Unhandled pin numbering mode')
-
     def cleanup(self):
-        pass
+        self.modes = {}
+        self.pins = {}
+        # reset hardware, numbering?
+
+    def setmode(self, mode):
+        """Set pin numbering mode"""
+        if mode != self.BOARD:
+            raise GpioException('Unhandled pin numbering mode %s' % mode)
+        self.numbering = mode
+        # ?? self.hw._setmode(mode)
 
     def setup(self, pin, mode):
+        """Set mode for each pin (in/out, etc)"""
         # verify possible modes
         self.modes[pin] = mode
+        # TODO see if anything else done here
+        # assume the pin starts as low (may not be accurate)
         self._set(pin, self.LOW)
-
-    def _set(self, pin, value):
-        # verify possible values
-        self.pins[pin] = value
-        self.hw._set(pin, value)
-
-    # Called by Adafruit and RPLCD API
-    def output(self, pin, value):
-        # Verify setup/pin mode is output
-        self._set(pin, value)
 
     # Called by Adafruit API
     def output_pins(self, pinnums_to_bools):
-        data_pins = set([self._d4, self._d5, self._d6, self._d7])
-        if set(pinnums_to_bools.keys()) != data_pins:
-            # only time is rgb setting
-            return
-        # the only time it is called, it is called 2x to make a write8
-        self.hw.write4(
-            pinnums_to_bools[self._d4],
-            pinnums_to_bools[self._d5],
-            pinnums_to_bools[self._d6],
-            pinnums_to_bools[self._d7])
+        """Given a dict of pinnum:val, set multiple pins"""
+        for (pin, value) in pinnums_to_bools.items():
+            self._set(pin, value)
+
+    # Called by Adafruit and RPLCD API
+    def output(self, pin, value):
+        """Given a pin number set it to value"""
+        self._set(pin, value)
+
+    def _set(self, pin, value):
+        """Not in RPi.GPIO, manages Fake state and triggers HW"""
+        if pin not in self.modes:
+            raise GpioException('Pin %s not setup' % pin)
+        if self.modes[pin] != self.OUT:
+            raise GpioException('Attempt to IN and OUT pin')
+        if value not in [self.LOW, self.HIGH]:
+            # TODO handle PWM
+            raise GpioException('Unhandled pin value %s' % value)
+        self.pins[pin] = value
+        self.hw._set(pin, value)
 
