@@ -220,13 +220,13 @@ class FakeHw(object):
         # LCD_ROW_OFFSETS = (0x00, 0x40, 0x14, 0x54)
         ros = self.row_offsets
         if arg >= ros[3]:
-            return self.set_cursor(ros[3] - arg, 3)
+            return self.set_cursor(arg - ros[3], 3)
         elif arg < ros[2]:
-            return self.set_cursor(ros[0] - arg, 0)
+            return self.set_cursor(arg - ros[0], 0)
         elif arg >= ros[1]:
-            return self.set_cursor(ros[1] - arg, 1)
+            return self.set_cursor(arg - ros[1], 1)
         elif arg >= ros[2]:
-            return self.set_cursor(ros[2] - arg, 2)
+            return self.set_cursor(arg - ros[2], 2)
         else:
             raise HwException('Bad cursor pos %s' % arg)
 
