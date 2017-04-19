@@ -34,16 +34,18 @@ class ApiConnError(BaseException):
     pass
 
 
+# TODO I think this function doesn't work as expected now that \r\n is used
+# there is a fn in LCD that can turn a string into array of lines
 def screenitize(msg, cols, rows):
     # on errors, return None
     lines = []
-    for line in msg.split('\n'):
+    for line in msg.split('\r\n'):
         if len(line) > cols:
             line = line[:cols]
         lines.append(line)
     if len(lines) > rows:
         lines = lines[:rows]
-    msg = '\n'.join(lines)
+    msg = '\r\n'.join(lines)
     # no need to convert to ord
     #   codec.encode called by lcd.message
     return msg
@@ -60,7 +62,7 @@ class View(object):
 
     def safe_msg(self):
         # TODO work out decode
-        return self.msg.replace('\n', '\\n')
+        return self.msg.replace('\n', '\\n').replace('\r','\\r')
 
     def __str__(self):
         return 'id: %s msg: %s' % (self.id, self.safe_msg())
@@ -81,7 +83,7 @@ class Server(object):
         self.lcd = lcd
         if self.lcd is None:
             self.lcd = Lcd()
-        self.views = [View("this is the default\nview, update me", 0), ]
+        self.views = [View("this is the default\r\nview, update me", 0), ]
         self.settings = {}
         self.settings['rate'] = 2
         self.curr_view = 0
