@@ -38,7 +38,7 @@ class Hw(object):
         self.cols = cols
         self.row_offsets = [0x00, 0x40, self.cols, 0x40 + self.cols]
         self.decode_map = hitachi_utf_map()
-        self.clear()
+        self.init_charcells()
 
     def __repr__(self):
         return '%s(rows=%s,cols=%s)' % (self.__class__.__name__, self.rows, self.cols)
@@ -192,13 +192,16 @@ class Hw(object):
         if self.raise_unk:
             raise HwException('Unhandled, but known, cmd %s' % arg)
 
-    def clear(self, *args):
+    def init_charcells(self):
         self.cur_c = 0
         self.cur_r = 0
         self.cells = {}
         for r in range(self.rows):
             self.cells[r] = {}
             # get(, ' ') allows us to skip setting all to ' '
+
+    def clear(self, *args):
+        self.init_charcells()
         self.out_refresh()
 
     def set_cursor(self, col, row):
