@@ -16,10 +16,9 @@ class Gpio(object):
     LOW = 0
     HIGH = 1
 
-    def __init__(self, hw=None, **kwargs):
-        self.hw = hw
-        if self.hw is None:
-            self.hw = FakeHw(**kwargs)
+    def __init__(self):  #, hw=None, **kwargs):
+        # start of with None to avoid .fake's import before patching done
+        self.hw = None
         self.numbering = self.MODE_UNKNOWN
         self.modes = {}
         self.pins = {}
@@ -40,12 +39,14 @@ class Gpio(object):
         self.numbering = mode
         # ?? self.hw._setmode(mode)
 
-    def setup(self, pin, mode, initial=self.LOW, pull_up_down=None):
+    def setup(self, pin, mode, initial=None, pull_up_down=None):
         """Set mode for each pin (in/out, etc)"""
         # TODO verify possible modes
         self.modes[pin] = mode
         # TODO look at RPi.GPIO to see if anything else done here
         # assume the pin starts as low (may not be accurate)
+        if initial is None:
+            initial = self.LOW
         self._set(pin, initial)
 
     # Called by Adafruit API
