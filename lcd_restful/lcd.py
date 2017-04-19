@@ -1,12 +1,12 @@
 def patch_fake_gpio():
     print('Warning, not in RPi, using mock GPIO')
+    # Idea taken from RPLCD who commented it as being from:
+    # reddit.com/r/Python/comments/5eddp5/mock_testing_rpigpio
     import mock
-    # Mock RPi.GPIO module (https://m.reddit.com/r/Python/comments/5eddp5/mock_testing_rpigpio/)
-    MockRPi = mock.MagicMock()
     from .fake import Hw as FakeHw
     from .gpio import Gpio as FakeGpio
-    GPIO = FakeGpio(hw=FakeHw(compact=True))
-    MockRPi.GPIO = GPIO
+    MockRPi = mock.MagicMock()
+    MockRPi.GPIO = FakeGpio(hw=FakeHw(compact=True))
     modules = {
         'RPi': MockRPi,
         'RPi.GPIO': MockRPi.GPIO,
@@ -14,15 +14,15 @@ def patch_fake_gpio():
     patcher = mock.patch.dict('sys.modules', modules)
     patcher.start()
 
+
 on_rpi = True
-# GPIO = None
 try:
     import RPi.GPIO
 except ImportError:
     on_rpi = False
 if not on_rpi:
     patch_fake_gpio()
-# else: GPIO = RPi.GPIO
+# now that the patching is done, we can import RPLCD
 from RPLCD import CharLCD
 
 from .codec import encode_char
