@@ -2,17 +2,19 @@
 import sys
 from getopt import getopt, GetoptError
 from .api import Server
-from .fake import FakeLcdApi
+from .lcd import Lcd
 
 
 USAGE = """\
-Usage %s [-h|--help]
+Usage %s [-h|--help] [-f|--fake]
 \t-h or --help\tThis help message
+\t-f or --fake\tIf on RPi, use FakeHw
 
 """
 
 
 def get_args(args):
+    arg0 = args[0]
     try:
         opts, args = getopt(args[1:], 'hf', ['help', 'fake'])
     except GetoptError as e:
@@ -22,25 +24,23 @@ def get_args(args):
     ret_args['fake'] = False
     for opt, arg in opts:
         if opt in ['-h', '--help']:
-            print(USAGE % args[0])
+            print(USAGE % arg0)
             sys.exit(0)
         elif opt in ['-f', '--fake']:
             ret_args['fake'] = True
         else:
-            print(USAGE % args[0])
+            print(USAGE % arg0)
             sys.exit(1)
     return ret_args
 
 
 def main_serv(clargs=sys.argv):
     opts = get_args(clargs)
-    lcd = None
-    if opts['fake']:
-        lcd = FakeLcdApi()
-    s = Server(lcd=lcd)
+    s = Server(lcd=Lcd(opts['fake']))
     s.run()
     return 0
 
 
 if __name__ == "__main__":
     sys.exit(main_serv())
+
