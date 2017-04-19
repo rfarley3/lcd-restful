@@ -12,7 +12,7 @@ class HwException(FakesException):
     pass
 
 
-class FakeHw(object):
+class Hw(object):
     def __init__(self, rows=4, cols=20, raise_on_unknown=True, compact=True):
         self.raise_unk = raise_on_unknown
         self.reuse = compact  # re-use term output (clear before each print)

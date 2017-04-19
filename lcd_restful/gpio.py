@@ -1,11 +1,11 @@
-from .fake import FakeHw, FakesException
+from .fake import Hw as FakeHw, FakesException
 
 
 class GpioException(FakesException):
     pass
 
 
-class FakeGpio(object):
+class Gpio(object):
     # https://sourceforge.net/p/raspberry-gpio-python/code/ci/default/tree/source/common.h
     # https://sourceforge.net/p/raspberry-gpio-python/code/ci/default/tree/source/c_gpio.h
     MODE_UNKNOWN = -1
