@@ -1,5 +1,6 @@
 # from RPLCD.common import (
 #     LCD_MOVERIGHT,
+# )
 from .codec import hitachi_utf_map
 LCD_MOVERIGHT = 0x04
 

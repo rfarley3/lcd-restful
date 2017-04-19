@@ -24,7 +24,11 @@ class Gpio(object):
         self.modes = {}
         self.pins = {}
 
-    def cleanup(self):
+    def cleanup(self, pin=None):
+        # resets any setup'ed pins to input with no pud
+        if pin is not None:
+            del self.modes[pin]
+            del self.pins[pin]
         self.modes = {}
         self.pins = {}
         # reset hardware, numbering?
@@ -36,13 +40,13 @@ class Gpio(object):
         self.numbering = mode
         # ?? self.hw._setmode(mode)
 
-    def setup(self, pin, mode):
+    def setup(self, pin, mode, initial=self.LOW, pull_up_down=None):
         """Set mode for each pin (in/out, etc)"""
-        # verify possible modes
+        # TODO verify possible modes
         self.modes[pin] = mode
-        # TODO see if anything else done here
+        # TODO look at RPi.GPIO to see if anything else done here
         # assume the pin starts as low (may not be accurate)
-        self._set(pin, self.LOW)
+        self._set(pin, initial)
 
     # Called by Adafruit API
     def output_pins(self, pinnums_to_bools):
@@ -66,4 +70,22 @@ class Gpio(object):
             raise GpioException('Unhandled pin value %s' % value)
         self.pins[pin] = value
         self.hw._set(pin, value)
+
+
+###############################
+# Other unimplemented functions
+
+# carp if any pin you set has different mode (or anything other than input)
+# could be bad cleanup, or multiple simultaneous GPIO instances
+# def setwarnings(mode):
+
+# return function/mode of pin, can be:
+# INPUT, OUTPUT, SPI, I2C, HARD_PWM, SERIAL, UNKNOWN
+# def gpio_function(pin):
+
+# read value of pin (opposite of output)
+# def input(pin):
+
+# create a PWM obj for pin
+# def PWM(pin, frequency):
 
