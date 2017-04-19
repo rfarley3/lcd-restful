@@ -2,6 +2,9 @@ rplcd
 requests
 bottle
 jsonpickle
+# mock only needed to print to terminal (FakeHw)
 mock
+# this is last in case it fails
+# only needed on RPi virtualenv (system has it pre-installed)
 RPi.GPIO
 

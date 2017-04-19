@@ -10,7 +10,7 @@ setup(
     author='Ryan Farley',
     author_email='rfarley3@gmu.edu',
     # url='https://github.com/rfarley3/lcd_restful',
-    # download_url='https://github.com/rfarley3/radio/tarball/0.1.1',
+    # download_url='https://github.com/rfarley3/lcd_restful/tarball/0.0.1',
     keywords=['lcd', 'rpi', 'hd44780'],
     classifiers=[],
     install_requires=[
