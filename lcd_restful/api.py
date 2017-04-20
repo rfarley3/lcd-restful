@@ -11,7 +11,7 @@ from urllib.parse import unquote, quote
 
 from . import DEBUG, BOTTLE_DEBUG, PORT
 from .lcd import Lcd
-# from .codec import encode_char
+from .codec import encode_char, decode_char
 
 
 def load_request(possible_keys):
@@ -34,44 +34,52 @@ class ApiConnError(BaseException):
     pass
 
 
-# TODO I think this function doesn't work as expected now that \r\n is used
-# there is a fn in LCD that can turn a string into array of lines
-def screenitize(msg, cols, rows):
-    # on errors, return None
-    lines = []
-    for line in msg.split('\r\n'):
-        if len(line) > cols:
-            line = line[:cols]
-        lines.append(line)
-    if len(lines) > rows:
-        lines = lines[:rows]
-    msg = '\r\n'.join(lines)
-    # no need to convert to ord
-    #   codec.encode called by lcd.message
-    return msg
-
-
 class View(object):
-    def __init__(self, msg, vid=None, cols=20, rows=4):
+    def __init__(self, msg, cols=20, rows=4, is_utf=True, truncate=True):
         self.msg = msg
-        self.screen_bytes = screenitize(msg, cols, rows)
-        self.id = vid
+        self.cols = cols
+        self.rows = rows
+        self.is_utf = is_utf
         self.valid = True
-        if self.screen_bytes != self.msg:  # is None
-            self.valid = False
+        # TODO validate dimensions
+
+    def as_utf(self):
+        if self.is_utf:
+            return self.msg
+        lines = []
+        for l in self.msg:
+            lines.append(''.join([decode_char(c) for c in l]))
+        return '\r\n'.join(lines)
+
+    def as_hitachi(self):
+        if not self.is_utf:
+            return self.msg
+        lines = []
+        line = b''
+        for c in self.msg:
+            if c == '\r':  # TODO handle
+                pass
+            elif c == '\n':
+                lines.append(line)
+                line = b''
+            else:
+                line += encode_char(c)
+        return lines
 
     def safe_msg(self):
         # TODO work out decode
         return self.msg.replace('\n', '\\n').replace('\r','\\r')
 
     def __str__(self):
-        return 'id: %s msg: %s' % (self.id, self.safe_msg())
+        return 'View: %s' % (self.safe_msg())
 
     def __repr__(self):
-        return "%s(msg='%s',vid=%s)" % (
+        return "%s(msg='%s',cols=%s,rows=%s,is_utf=%s)" % (
             self.__class__.__name__,
             self.safe_msg(),
-            self.id)
+            self.cols,
+            self.rows,
+            self.is_utf)
 
 
 class Server(object):
@@ -90,11 +98,7 @@ class Server(object):
         self.lcd_view(self.views[self.curr_view])
 
     def lcd_view(self, view):
-        self.lcd_msg(view.screen_bytes)
-
-    def lcd_msg(self, msg):
-        self.lcd.clear()
-        self.lcd.message(msg)  # , autowrap=True) no need with screenitize
+        self.lcd.message(view.as_utf(), clear=True)
 
     def url(self, endpoint, ver='1'):
         return '/api/v%s/%s' % (ver, endpoint)

@@ -25,7 +25,9 @@ class Lcd(CharLCD):
             auto_linebreaks=False)
 
     # For Adafruit lib compat
-    def message(self, msg, as_ordinal=False, autowrap=False):
+    def message(self, msg, as_ordinal=False, autowrap=False, clear=False):
+        if clear:
+            self.clear()
         if as_ordinal:
             return self.write_raw(msg)
         self.write_utf(msg, autowrap)
