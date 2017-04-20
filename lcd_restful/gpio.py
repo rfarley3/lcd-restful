@@ -1,7 +1,4 @@
-from .fake import Hw as FakeHw, FakesException
-
-
-class GpioException(FakesException):
+class GpioException(BaseException):
     pass
 
 
