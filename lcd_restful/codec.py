@@ -5,6 +5,10 @@ class HitachiEncodeError(BaseException):
     pass
 
 
+class HitachiDecodeError(BaseException):
+    pass
+
+
 # HD44780U datasheet table 4, ROM Code: A00
 # a predecessor to shift_jisx0213 similar to
 #    https://en.wikipedia.org/wiki/JIS_X_0201
@@ -60,6 +64,15 @@ def utf_hitachi_map():
     return mapping
 
 
+def decode_char(hitachi_byte):
+    utf_char = decoding_map.get(hitachi_byte)
+    if utf_char is None:
+        raise HitachiDecodeError(
+            'Invalid or char not in hitachi mapping: \'%s\'' %
+            hitachi_byte)
+    return utf_char
+
+
 def encode_char(utf_char):
     # the custom chars are stored as 0-7
     if ord(utf_char) < 8:
@@ -77,3 +90,5 @@ def encode_char(utf_char):
 
 
 encoding_map = utf_hitachi_map()
+decoding_map = hitachi_utf_map()
+
