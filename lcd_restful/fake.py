@@ -1,15 +1,9 @@
-# from RPLCD.common import (
-#     LCD_MOVERIGHT,
-# )
+import RPLCD.common as c
 from .codec import hitachi_utf_map
 LCD_MOVERIGHT = 0x04
 
 
-class FakesException(BaseException):
-    pass
-
-
-class HwException(FakesException):
+class HwException(BaseException):
     pass
 
 
