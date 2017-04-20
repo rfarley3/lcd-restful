@@ -6,6 +6,10 @@ class HwException(BaseException):
     pass
 
 
+def test(val, insn_mask):
+    return (val & insn_mask == insn_mask)
+
+
 class Hw(object):
     def __init__(self, rows=4, cols=20, raise_on_unknown=True, compact=True):
         self.raise_unk = raise_on_unknown
@@ -128,6 +132,7 @@ class Hw(object):
             self.write8_cmd(full_word)
 
     def initialize(self, val):
+        # Per Hitachi specs of initialize by command, for 4 or 8b width
         if val not in [0x03, 0x30, 0x02]:
             raise HwException('Invalid cmd based init insn, is your API odd?')
         self.init_cnt -= 1
@@ -135,8 +140,6 @@ class Hw(object):
             self.initialized = True
 
     def write8_chr(self, char_val):
-        # import sys
-        # print('write_at %s %s\n' % (self.cur_c, self.cur_r), file=sys.stderr)
         mapped_char = self.decode_map.get(char_val)
         self.cells[self.cur_r][self.cur_c] = mapped_char
         # it appears that the LCD increments its cursor per char
@@ -145,41 +148,32 @@ class Hw(object):
         self.out_refresh()
 
     def write8_cmd(self, val):
-        # LCD_CLEARDISPLAY
-        if val == 1:
-            return self.clear()
-        # LCD_SETDDRAMADDR
-        elif val >> 7 == 1:
+        if test(val, c.LCD_SETDDRAMADDR):
             # Set cursor pos
-            return self.cursor(val & 0b01111111)
-        # LCD_SETCGRAMADDR
-        elif (val >> 6) & 0x01 == 1:
+            # Per Adafruit_CharLCD.LCD_ROW_OFFSETS usage:
+            # LCD_SETDDRAMADDR | (col + LCD_ROW_OFFSETS[row]))
+            return self.cursor(val - c.LCD_SETDDRAMADDR)
+        elif test(val, c.LCD_SETCGRAMADDR):
             # Add a custom symbol/char
             return self.unhandled_cmd(val)  # TODO
-        # LCD_FUNCTIONSET
-        elif (val >> 5) & 0x01 == 1:
+        elif test(val, c.LCD_FUNCTIONSET):
             # sets write bit width
-            # return self.unhandled_cmd(val)
-            return self.funcset(val & 0b00011111)
-        # LCD_CURSORSHIFT
-        elif (val >> 4) & 0x01 == 1:
-            # LCD_DISPLAYMOVE
-            if (val >> 3) & 0x01 == 1:
+            return self.funcset(val)
+        elif test(val, c.LCD_CURSORSHIFT):
+            if test(val, c.LCD_DISPLAYMOVE):
                 # auto move all text on screen one direction
-                return self.move((val & 0b00000111) == c.LCD_MOVERIGHT)
+                return self.move(test(val, c.LCD_MOVERIGHT))
             return self.unhandled_cmd(val)
-        # LCD_DISPLAYCONTROL
-        elif (val >> 3) & 0x01 == 1:
+        elif test(val, c.LCD_DISPLAYCONTROL):
             # turn on and off display, show cursor, blink cursor
-            return self.displayset(val & 0b00000111)
-        # LCD_ENTRYMODESET
-        elif (val >> 2) & 0x01 == 1:
+            return self.displayset(val)
+        elif test(val, c.LCD_ENTRYMODESET):
             # set which way text enters, sets autoscroll
-            # NOTE assumes ENTRYLEFT
-            return self.entryset(val & 0b00000011)
-        # LCD_RETURNHOME
-        elif (val >> 1) & 0x01 == 1:
+            return self.entryset(val)
+        elif test(val, c.LCD_RETURNHOME):
             return self.set_cursor(0, 0)
+        elif test(val, c.LCD_CLEARDISPLAY):
+            return self.clear()
         raise HwException('Unexpected command value')
 
     def unhandled_cmd(self, arg):
@@ -199,14 +193,10 @@ class Hw(object):
         self.out_refresh()
 
     def set_cursor(self, col, row):
-        # import sys
-        # print('set_cursor %s %s\n' % (col, row), file=sys.stderr)
         self.cur_c = col
         self.cur_r = row
 
     def cursor(self, arg):
-        # Per Adafruit_CharLCD.LCD_ROW_OFFSETS usage:
-        # LCD_SETDDRAMADDR | (col + LCD_ROW_OFFSETS[row]))
         # LCD_ROW_OFFSETS = (0x00, 0x40, 0x14, 0x54)
         ros = self.row_offsets
         if arg >= ros[3]:
@@ -281,8 +271,4 @@ class Hw(object):
             # cursor/DECREMENT
             self.shiftmode_incr = False
             raise HwException('Unhandled shift mode %s' % arg)
-
-
-def test(val, goal):
-    return (val & goal == goal)
 
