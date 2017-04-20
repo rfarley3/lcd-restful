@@ -98,6 +98,7 @@ class Server(object):
         self.lcd_view(self.views[self.curr_view])
 
     def lcd_view(self, view):
+        # TODO auto-detect utf/hitachi to leverage msg's ordinal kwarg
         self.lcd.message(view.as_utf(), clear=True)
 
     def url(self, endpoint, ver='1'):
@@ -187,11 +188,10 @@ class Server(object):
             success = False
             resp = 'Invalid view: %s' % v
             return marshall_response(success, resp)
-        # NOTE clears view list
-        self.curr_view = 0
+        # Clears view list
         self.views = [v, ]
         self.settings['rate'] = 0
-        success = True
+        success = self._change_to_vid(0)
         resp = '%s' % self.views[self.curr_view].msg
         return marshall_response(success, resp)
 
@@ -252,12 +252,23 @@ class Server(object):
         return marshall_response(success, resp)
 
     def change_to_vid(self, vid):
+        success = True
+        if not self._change_to_vid(vid):
+            success = False
+        if success:
+            resp = 'you have now changed the current view to the specified view id %s: %s' % (vid, view)
+        else:
+            resp = 'View content incorrect dimensions'
+        return marshall_response(success, resp)
+
+    def _change_to_vid(self, vid):
         view = self.views[vid]
         self.curr_view = vid
-        self.lcd_view(view)
-        success = True
-        resp = 'you have now changed the current view to the specified view id %s: %s' % (vid, view)
-        return marshall_response(success, resp)
+        try:
+            self.lcd_view(view)
+        except IndexError:
+            return False
+        return True
 
     def set_view(self, vid=None):
         # if no vid, then set all from ['views']
