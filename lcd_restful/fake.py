@@ -1,6 +1,5 @@
 import RPLCD.common as c
 from .codec import hitachi_utf_map
-LCD_MOVERIGHT = 0x04
 
 
 class HwException(BaseException):
@@ -130,7 +129,7 @@ class Hw(object):
 
     def initialize(self, val):
         if val not in [0x03, 0x30, 0x02]:
-            raise HwException('Invalid cmd based init insn, is API odd?')
+            raise HwException('Invalid cmd based init insn, is your API odd?')
         self.init_cnt -= 1
         if self.init_cnt == 0:
             self.initialized = True
@@ -167,7 +166,7 @@ class Hw(object):
             # LCD_DISPLAYMOVE
             if (val >> 3) & 0x01 == 1:
                 # auto move all text on screen one direction
-                return self.move((val & 0b00000111) == LCD_MOVERIGHT)
+                return self.move((val & 0b00000111) == c.LCD_MOVERIGHT)
             return self.unhandled_cmd(val)
         # LCD_DISPLAYCONTROL
         elif (val >> 3) & 0x01 == 1:
@@ -223,16 +222,14 @@ class Hw(object):
 
     def funcset(self, arg):
         # self.read_width = 4
-        if arg & 0x10 == 0x10:
+        if test(arg, c.LCD_8BITMODE):
             self.read_width = 8
         self.two_line = True
-        if arg & 0x08 != 0x08:
-            # 1LINE
-            self.two_line = False
+        if not test(arg, c.LCD_2LINE):
+            self.two_line = False  # 1LINE
             raise HwException('Unhandled line mode %s' % (arg & 0x08))
         self.eight_dots = True
-        if arg & 0x04 == 0x04:
-            # 5x10DOTS
+        if test(arg, c.LCD_5x10DOTS):
             self.eight_dots = False
             raise HwException('Unhandled dot height %s' % (arg & 0x04))
 
@@ -263,25 +260,29 @@ class Hw(object):
     def displayset(self, arg):
         # NOTE assuming it's turning on a blank screen, hidden cursor
         # Flags for display on/off control
-        if arg & 0x04 != 0x04:
+        if test(arg, c.LCD_DISPLAYON):
             # turn display off
             self.clear()
             return
-        if arg & 0x02 == 0x02:
+        if test(arg, c.LCD_CURSORON):
             # TODO show cursor
-            raise HwException('Unhandled cursor mode %s' % (arg & 0x02))
-        if arg & 0x01 == 0x01:
+            raise HwException('Unhandled cursor mode %s' % arg)
+        if test(arg, c.LCD_BLINKON):
             # TODO blink, (what, cursor or text?)
-            raise HwException('Unhandled blink mode %s' % (arg & 0x02))
+            raise HwException('Unhandled blink mode %s' % arg)
 
     def entryset(self, arg):
         self.entryleft = True
-        if arg & 0x02 != 0x02:
+        if not test(arg, c.LCD_ENTRYLEFT):
             self.entryleft = False
-            raise HwException('Unhandled entry direction %s' % (arg & 0x02))
-        self.shiftmode_decr = True  # cursor
-        if arg & 0x01 == 0x01:
-            # display/INCREMENT
-            self.shiftmode_decr = False
-            raise HwException('Unhandled shift mode %s' % (arg & 0x01))
+            raise HwException('Unhandled entry direction %s' % arg)
+        self.shiftmode_incr = True  # display
+        if test(arg, c.LCD_ENTRYSHIFTINCREMENT):
+            # cursor/DECREMENT
+            self.shiftmode_incr = False
+            raise HwException('Unhandled shift mode %s' % arg)
+
+
+def test(val, goal):
+    return (val & goal == goal)
 
