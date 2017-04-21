@@ -4,8 +4,8 @@ PORT = 1234  # as numbers of letters of the alphabet for LCD
 COMPACT = True  # re-use same 4x20 characters in the term (when in fake mode)
 
 
-# After this function, any futher calls to import RPi.GPIO actually
-# import .gpio.Gpio instead
+# After this function, any futher calls to import RPi.GPIO
+# will instead import .gpio.Gpio instead
 def patch_fake_gpio():
     print('Warning, not in RPi, using mock GPIO')
     # Idea taken from RPLCD who commented it as being from:
@@ -13,7 +13,7 @@ def patch_fake_gpio():
     import mock
     from .gpio import Gpio as FakeGpio
     MockRPi = mock.MagicMock()
-    MockRPi.GPIO = FakeGpio()  # hw=FakeHw(compact=True))
+    MockRPi.GPIO = FakeGpio()
     modules = {
         'RPi': MockRPi,
         'RPi.GPIO': MockRPi.GPIO,

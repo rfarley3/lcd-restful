@@ -25,7 +25,11 @@ def main(argv):
     lcd = Lcd(fake=use_fake)
     lcd.message('Hello\nworld\r\n!!!!!!!!!!')
     pause(lcd, interact)
-    lcd.message('1' * 20 + '\r\n' + '2' * 20 + '\r\n' + '3' * 20 + '\r\n' + '4' * 20)
+    lcd.message(
+        '1' * 20 + '\r\n' +
+        '2' * 20 + '\r\n' +
+        '3' * 20 + '\r\n' +
+        '4' * 20)
     pause(lcd, interact)
     # Show all possible characters on display
     i = 0
@@ -35,8 +39,7 @@ def main(argv):
             line = []
             max_i = i + 20  # lcd.cols
             while i < max_i and i < 256:
-                # c = i
-                line.append(i)  # += chr(c)
+                line.append(i)
                 i += 1
             lines.append(line)
         lcd.message(lines, as_ordinal=True)
@@ -49,7 +52,12 @@ def main(argv):
     pause(lcd, interact)
     lcd.message('Testing message that needs autowrap', autowrap=True)
     pause(lcd, interact)
-    lcd.message('junkkkk\r\nTesting\r\nmessage with\r\ntoo many lines\r\nrolled 1st line', autowrap=True)
+    lcd.message(
+        'junkkkk\r\n' +
+        'Testing\r\n' +
+        'message with\r\n' +
+        'too many lines\r\n' +
+        'rolled 1st line', autowrap=True)
     pause(lcd, interact)
     lcd.message('Testing utf8 to hitachi-code', autowrap=True)
     pause(lcd, interact)
@@ -114,3 +122,4 @@ def main(argv):
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv))
+

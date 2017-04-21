@@ -1,4 +1,5 @@
 # coding=utf-8
+from __future__ import unicode_literals
 """Provides encoding from UTF characters to HD44780U-A00 and back again"""
 
 

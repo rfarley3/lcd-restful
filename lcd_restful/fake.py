@@ -1,5 +1,6 @@
 from __future__ import print_function
 import RPLCD.common as c
+
 from .codec import hitachi_utf_map
 
 
