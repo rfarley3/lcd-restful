@@ -7,7 +7,10 @@ from bottle import (
     route as get, post, put, delete,
     request,  # response, hook
 )
-from urllib.parse import unquote, quote
+try:
+    from urllib.parse import unquote, quote
+except ImportError:
+    from urllib import unquote, quote
 
 from . import DEBUG, BOTTLE_DEBUG, PORT
 from .lcd import Lcd

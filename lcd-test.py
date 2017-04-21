@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-# coding=utf8
+# coding=utf-8
+from __future__ import print_function
 import sys
 import time
 from lcd_restful import Lcd
@@ -69,6 +70,16 @@ def main(argv):
         lcd.message(l)
         pause(lcd, interact)
 
+    lcd.message('Displaying the particularly odd characters', autowrap=True)
+    pause(lcd, interact)
+    odd_chars = [
+        b'\x67\x6a\x70\x71\x79',
+        b'\xe7\xea\xf0\xf1\xf9',
+        b'\xe9\xf8',
+        b'\xeb\xed\xf6\xff']
+    lcd.message(odd_chars, as_ordinal=True)
+    pause(lcd, interact)
+
     # # Demo showing the cursor.
     # lcd.show_cursor(True)
     # lcd.message('Show cursor')
@@ -97,6 +108,7 @@ def main(argv):
 
     lcd.message('Goodbye!')
     pause(lcd, False)
+    lcd.close()
     return 0
 
 

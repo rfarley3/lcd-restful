@@ -1,3 +1,4 @@
+# coding=utf-8
 """Provides encoding from UTF characters to HD44780U-A00 and back again"""
 
 
