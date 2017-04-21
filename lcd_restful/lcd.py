@@ -2,7 +2,6 @@
 from __future__ import print_function
 from RPLCD import CharLCD
 
-from . import ON_RPI, patch_fake_gpio, inject_hw
 from .codec import encode_char
 
 
@@ -12,10 +11,6 @@ BCM_PIN_MODE = 11
 
 class Lcd(CharLCD):
     def __init__(self, fake=False):
-        if fake and ON_RPI:
-            patch_fake_gpio()
-        if fake or not ON_RPI:
-            inject_hw()
         super(Lcd, self).__init__(
             rows=4,
             cols=20,

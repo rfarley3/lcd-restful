@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 import sys
 from getopt import getopt, GetoptError
-from .api import Server
-from .lcd import Lcd
 
 
 USAGE = """\
@@ -31,12 +29,20 @@ def get_args(args):
         else:
             print(USAGE % arg0)
             sys.exit(1)
+    if not ret_args['fake']:
+        try:
+            import RPi.GPIO
+        except ImportError:
+            ret_args['fake'] = True
     return ret_args
 
 
 def main_serv(clargs=sys.argv):
     opts = get_args(clargs)
-    s = Server(lcd=Lcd(opts['fake']))
+    if opts['fake']:
+        import rpifake
+    from .api import Server
+    s = Server()
     s.run()
     return 0
 

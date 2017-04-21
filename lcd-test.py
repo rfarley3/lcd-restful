@@ -3,7 +3,6 @@
 from __future__ import print_function
 import sys
 import time
-from lcd_restful import Lcd
 
 # WARNING double check pin configuration in lcd_restful.lcd
 
@@ -22,6 +21,13 @@ def main(argv):
     use_fake = False
     if '-f' in argv or '--fake' in argv:
         use_fake = True
+    try:
+        import RPi.GPIO
+    except ImportError:
+        use_fake = True
+    if use_fake:
+        import rpifake
+    from lcd_restful import Lcd
     lcd = Lcd(fake=use_fake)
     lcd.message('Hello\nworld\r\n!!!!!!!!!!')
     pause(lcd, interact)
