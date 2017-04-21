@@ -31,8 +31,6 @@ class Gpio(object):
 
     def setmode(self, mode):
         """Set pin numbering mode"""
-        if mode != self.BOARD:
-            raise GpioException('Unhandled pin numbering mode %s' % mode)
         self.numbering = mode
         # ?? self.hw._setmode(mode)
 
