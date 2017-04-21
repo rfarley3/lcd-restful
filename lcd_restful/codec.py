@@ -61,6 +61,8 @@ def utf_hitachi_map():
     mapping['ﾟ'] = 222
     mapping['ﾞ'] = 223
     mapping['゛'] = 223
+    mapping['¤'] = 235  # currency sign or superscript x
+    mapping['\u2C60'] = 237  # L double bar
     mapping['∑'] = 246
     mapping['x̄'] = 248
     return mapping
