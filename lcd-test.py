@@ -67,7 +67,7 @@ def main(argv):
          '@ABCDEFGHIJKLMNO\r\n' +
          'PQRSTUVWXYZ[¥]^_'),
         ('`abcdefghijklmno\r\n' +
-         'pqrstuvwxyz{|}→←)'),
+         'pqrstuvwxyz{|}→←'),
         (' ｡｢｣､･ｦｧｨｩｪｫｬｭｮｯ\r\n' +
          'ｰｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿ\r\n' +
          'ﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏ\r\n' +
