@@ -20,10 +20,18 @@ def patch_fake_gpio():
     is_active = True
 
 
-# Do the test if we have RPi.GPIO or not
-try:
-    import RPi.GPIO
-except ImportError:
+# Test if we have RPi.GPIO or not
+import sys
+rpi_gpio_exists = False
+if sys.version_info < (3,):
+    import imp
+    if imp.find_module('RPi')[0] is not None:
+        rpi_gpio_exists = False
+else:
+    import importlib.util
+    if importlib.util.find_spec('RPi') is not None:
+        rpi_gpio_exists = False
+if not rpi_gpio_exists:
     patch_fake_gpio()
 # now that the patching is done, we can import RPLCD anywhere
 

@@ -8,6 +8,7 @@ import rpifake
 # .fake imports RPLCD.common, and RPCLD.__init__ imports RPi.GPIO
 # So we can't import .fake until RPi is taken care of by rpifake.__init__
 def inject_fake_hw():
+    import sys
     from .fake import Hw as FakeHw
     sys.modules['RPi.GPIO'].hw = FakeHw(compact=COMPACT)
 
