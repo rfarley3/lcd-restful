@@ -12,8 +12,8 @@ def patch_fake_gpio():
         'RPi': MockRPi,
         'RPi.GPIO': MockRPi.GPIO,
     }
-    patcher = mock.patch.dict('sys.modules', modules)
-    patcher.start()
+    sys.modules.update(modules)
+    is_active = True
 
 
 # Do the test if we have RPi.GPIO or not
