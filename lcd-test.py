@@ -56,11 +56,11 @@ def main(argv):
     lcd.message('Testing message that needs autowrap', autowrap=True)
     pause(lcd, interact)
     lcd.message(
-        'junkkkk\r\n' +
+        'error if visible\r\n' +
         'Testing\r\n' +
         'message with\r\n' +
         'too many lines\r\n' +
-        'rolled 1st line', autowrap=True)
+        'rolled 1st line ', autowrap=True)
     pause(lcd, interact)
     lcd.message('Testing utf8 to hitachi-code', autowrap=True)
     pause(lcd, interact)
