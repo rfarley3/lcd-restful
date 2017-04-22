@@ -21,14 +21,11 @@ def main(argv):
     use_fake = False
     if '-f' in argv or '--fake' in argv:
         use_fake = True
-    try:
-        import RPi.GPIO
-    except ImportError:
-        use_fake = True
     if use_fake:
-        import rpifake
-    from lcd_restful import Lcd
-    lcd = Lcd(fake=use_fake)
+        from lcd_restful import override_rpigpio
+        override_rpigpio()
+    from lcd_restful.lcd import Lcd
+    lcd = Lcd()
     lcd.message('Hello\nworld\r\n!!!!!!!!!!')
     pause(lcd, interact)
     lcd.message(

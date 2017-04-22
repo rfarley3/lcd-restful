@@ -29,18 +29,14 @@ def get_args(args):
         else:
             print(USAGE % arg0)
             sys.exit(1)
-    if not ret_args['fake']:
-        try:
-            import RPi.GPIO
-        except ImportError:
-            ret_args['fake'] = True
     return ret_args
 
 
 def main_serv(clargs=sys.argv):
     opts = get_args(clargs)
     if opts['fake']:
-        import rpifake
+        from . import override_rpigpio
+        override_rpigpio()
     from .api import Server
     s = Server()
     s.run()
