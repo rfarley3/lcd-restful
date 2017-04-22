@@ -1,5 +1,12 @@
-from __future__ import print_function
+from __future__ import print_function, unicode_literals
 import RPLCD.common as c
+import sys
+if sys.version_info < (3,):
+    text_type = unicode
+    binary_type = str
+else:
+    text_type = str
+    binary_type = bytes
 
 from .codec import hitachi_utf_map
 
@@ -44,7 +51,7 @@ class Hw(object):
         return '%s(rows=%s,cols=%s)' % (self.__class__.__name__, self.rows, self.cols)
 
     # override if output type changes (like a file)
-    def __str__(self):
+    def utf_str(self):
         lcd_str = ''
         lcd_str += '-' * (self.cols + 2) + '\n'
         for r in range(self.rows):
@@ -54,6 +61,12 @@ class Hw(object):
             lcd_str += r_str + '-\n'
         lcd_str += '-' * (self.cols + 2)
         return lcd_str
+
+    def __unicode__(self):
+        return self.utf_str()
+
+    def __str__(self):
+        return self.utf_str()
 
     # override if output type changes (like a file)
     def out_clear(self):
@@ -71,7 +84,7 @@ class Hw(object):
     # override if output type changes (like a file)
     def out_draw(self):
         """Output matrix of chars to terminal screen area"""
-        print(self)
+        print(text_type(self))
 
     def out_refresh(self):
         # TODO allow refreshing single cells, or range of cells

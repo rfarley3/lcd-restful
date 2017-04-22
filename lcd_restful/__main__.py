@@ -43,6 +43,6 @@ def main_serv(clargs=sys.argv):
     return 0
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     sys.exit(main_serv())
 

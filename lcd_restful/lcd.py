@@ -2,6 +2,13 @@
 from __future__ import print_function
 from RPLCD import CharLCD
 from RPi.GPIO import BCM
+import sys
+if sys.version_info < (3,):
+    text_type = unicode
+    binary_type = str
+else:
+    text_type = str
+    binary_type = bytes
 
 from .codec import encode_char
 
@@ -50,6 +57,9 @@ class Lcd(CharLCD):
             msg = [msg]
         for line in msg:
             for b in line:
+                # if line is a byte array, instead of list of 8b ints
+                if isinstance(b, binary_type):
+                    b = ord(b)
                 self.write(b)
             self.row_inc()
 

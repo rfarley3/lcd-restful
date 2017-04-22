@@ -1,3 +1,4 @@
+from __future__ import print_function
 # After this function, any futher calls to import RPi.GPIO
 # will instead import .gpio.Gpio instead
 is_active = False
@@ -25,7 +26,9 @@ import sys
 rpi_gpio_exists = False
 if sys.version_info < (3,):
     import imp
-    if imp.find_module('RPi')[0] is not None:
+    try:
+        imp.find_module('RPi')
+    except ImportError:
         rpi_gpio_exists = False
 else:
     import importlib.util
