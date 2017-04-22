@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 # coding=utf-8
-from __future__ import print_function
+from __future__ import print_function, unicode_literals
 import sys
 import time
-from lcd_restful import Lcd
 
 # WARNING double check pin configuration in lcd_restful.lcd
 
@@ -22,7 +21,11 @@ def main(argv):
     use_fake = False
     if '-f' in argv or '--fake' in argv:
         use_fake = True
-    lcd = Lcd(fake=use_fake)
+    if use_fake:
+        from lcd_restful import override_rpigpio
+        override_rpigpio()
+    from lcd_restful.lcd import Lcd
+    lcd = Lcd()
     lcd.message('Hello\nworld\r\n!!!!!!!!!!')
     pause(lcd, interact)
     lcd.message(
@@ -53,11 +56,11 @@ def main(argv):
     lcd.message('Testing message that needs autowrap', autowrap=True)
     pause(lcd, interact)
     lcd.message(
-        'junkkkk\r\n' +
+        'error if visible\r\n' +
         'Testing\r\n' +
         'message with\r\n' +
         'too many lines\r\n' +
-        'rolled 1st line', autowrap=True)
+        'rolled 1st line ', autowrap=True)
     pause(lcd, interact)
     lcd.message('Testing utf8 to hitachi-code', autowrap=True)
     pause(lcd, interact)

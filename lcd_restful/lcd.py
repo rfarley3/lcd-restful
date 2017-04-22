@@ -1,25 +1,24 @@
 # coding=utf-8
 from __future__ import print_function
 from RPLCD import CharLCD
+from RPi.GPIO import BCM
+import sys
+if sys.version_info < (3,):
+    text_type = unicode
+    binary_type = str
+else:
+    text_type = str
+    binary_type = bytes
 
-from . import ON_RPI, patch_fake_gpio, inject_hw
 from .codec import encode_char
-
-
-BOARD_PIN_MODE = 10
-BCM_PIN_MODE = 11
 
 
 class Lcd(CharLCD):
     def __init__(self, fake=False):
-        if fake and ON_RPI:
-            patch_fake_gpio()
-        if fake or not ON_RPI:
-            inject_hw()
         super(Lcd, self).__init__(
             rows=4,
             cols=20,
-            numbering_mode=BCM_PIN_MODE,
+            numbering_mode=BCM,
             pin_rs=25,    # 4
             pin_rw=None,  # 5
             pin_e=24,     # 6
@@ -58,6 +57,9 @@ class Lcd(CharLCD):
             msg = [msg]
         for line in msg:
             for b in line:
+                # if line is a byte array, instead of list of 8b ints
+                if isinstance(b, binary_type):
+                    b = ord(b)
                 self.write(b)
             self.row_inc()
 

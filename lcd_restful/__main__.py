@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 import sys
 from getopt import getopt, GetoptError
-from .api import Server
-from .lcd import Lcd
 
 
 USAGE = """\
@@ -36,11 +34,15 @@ def get_args(args):
 
 def main_serv(clargs=sys.argv):
     opts = get_args(clargs)
-    s = Server(lcd=Lcd(opts['fake']))
+    if opts['fake']:
+        from . import override_rpigpio
+        override_rpigpio()
+    from .api import Server
+    s = Server()
     s.run()
     return 0
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     sys.exit(main_serv())
 
