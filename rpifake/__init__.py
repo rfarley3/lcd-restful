@@ -26,7 +26,7 @@ def patch_fake_gpio():
 
 
 # Test if we have RPi.GPIO or not
-rpi_gpio_exists = False
+rpi_gpio_exists = True
 if sys.version_info < (3,):
     import imp
     try:
@@ -35,7 +35,7 @@ if sys.version_info < (3,):
         rpi_gpio_exists = False
 else:
     import importlib.util
-    if importlib.util.find_spec('RPi') is not None:
+    if importlib.util.find_spec('RPi') is None:
         rpi_gpio_exists = False
 if not rpi_gpio_exists:
     patch_fake_gpio()
