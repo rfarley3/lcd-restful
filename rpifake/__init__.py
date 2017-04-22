@@ -1,9 +1,7 @@
 # After this function, any futher calls to import RPi.GPIO
 # will instead import .gpio.Gpio instead
 def patch_fake_gpio():
-    print('Warning, not in RPi, using mock GPIO')
-    # Idea taken from RPLCD who commented it as being from:
-    # reddit.com/r/Python/comments/5eddp5/mock_testing_rpigpio
+    import sys
     import mock
     from .gpio import Gpio as FakeGpio
     MockRPi = mock.MagicMock()
