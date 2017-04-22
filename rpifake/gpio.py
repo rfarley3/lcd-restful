@@ -13,7 +13,7 @@ class Gpio(object):
     LOW = 0
     HIGH = 1
 
-    def __init__(self):  #, hw=None, **kwargs):
+    def __init__(self):
         # start of with None to avoid .fake's import before patching done
         self.hw = None
         self.numbering = self.MODE_UNKNOWN
@@ -65,6 +65,8 @@ class Gpio(object):
             # TODO handle PWM
             raise GpioException('Unhandled pin value %s' % value)
         self.pins[pin] = value
+        if self.hw is None:
+            raise GpioException('No fake HW has been attached')
         self.hw._set(pin, value)
 
 
@@ -84,4 +86,3 @@ class Gpio(object):
 
 # create a PWM obj for pin
 # def PWM(pin, frequency):
-

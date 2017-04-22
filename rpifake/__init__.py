@@ -1,8 +1,12 @@
 from __future__ import print_function
-# After this function, any futher calls to import RPi.GPIO
-# will instead import .gpio.Gpio instead
+import sys
+
+
 is_active = False
 
+
+# After this function, any futher calls to import RPi.GPIO
+# will instead import .gpio.Gpio instead
 def patch_fake_gpio():
     import sys
     import mock
@@ -22,7 +26,6 @@ def patch_fake_gpio():
 
 
 # Test if we have RPi.GPIO or not
-import sys
 rpi_gpio_exists = False
 if sys.version_info < (3,):
     import imp
@@ -37,4 +40,3 @@ else:
 if not rpi_gpio_exists:
     patch_fake_gpio()
 # now that the patching is done, we can import RPLCD anywhere
-

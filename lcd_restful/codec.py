@@ -95,4 +95,3 @@ def encode_char(utf_char):
 
 encoding_map = utf_hitachi_map()
 decoding_map = hitachi_utf_map()
-

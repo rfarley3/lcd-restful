@@ -12,7 +12,7 @@ try:
 except ImportError:
     from urllib import unquote, quote
 
-from . import DEBUG, BOTTLE_DEBUG, PORT
+from . import BOTTLE_DEBUG, PORT
 from .lcd import Lcd
 from .codec import encode_char, decode_char
 
@@ -71,7 +71,7 @@ class View(object):
 
     def safe_msg(self):
         # TODO work out decode
-        return self.msg.replace('\n', '\\n').replace('\r','\\r')
+        return self.msg.replace('\n', '\\n').replace('\r', '\\r')
 
     def __str__(self):
         return 'View: %s' % (self.safe_msg())
@@ -259,7 +259,8 @@ class Server(object):
         if not self._change_to_vid(vid):
             success = False
         if success:
-            resp = 'you have now changed the current view to the specified view id %s: %s' % (vid, view)
+            view = self.views[vid]
+            resp = 'you have now changed current view to %s: %s' % (vid, view)
         else:
             resp = 'View content incorrect dimensions'
         return marshall_response(success, resp)
@@ -307,7 +308,7 @@ class Server(object):
         else:
             self.views[vid] = View(req['view']['msg'], vid)
         success = True
-        resp = 'you have now reset view %s to what you uploaded %s' % (vid, self.views[vid])
+        resp = 'you have now reset view %s to: %s' % (vid, self.views[vid])
         return marshall_response(success, resp)
 
     def delete_view(self, vid=None):
@@ -474,4 +475,3 @@ class Client(object):
             print('API request failure: %s' % rjson)
             return None
         return rjson['resp']
-

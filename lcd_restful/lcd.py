@@ -10,6 +10,7 @@ else:
     text_type = str
     binary_type = bytes
 
+
 from .codec import encode_char
 
 
@@ -71,4 +72,3 @@ class Lcd(CharLCD):
             self.cursor_pos = (row + 1, col)
         else:
             self.cursor_pos = (0, col)
-

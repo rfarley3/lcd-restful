@@ -4,7 +4,6 @@ from __future__ import print_function, unicode_literals
 import sys
 import time
 
-# WARNING double check pin configuration in lcd_restful.lcd
 
 def pause(lcd, interact=False):
     if interact:
@@ -13,6 +12,7 @@ def pause(lcd, interact=False):
     else:
         time.sleep(2.0)
     lcd.clear()
+
 
 def main(argv):
     interact = False
@@ -25,6 +25,7 @@ def main(argv):
         from lcd_restful import override_rpigpio
         override_rpigpio()
     from lcd_restful.lcd import Lcd
+    # WARNING double check pin configuration in lcd_restful.lcd
     lcd = Lcd()
     lcd.message('Hello\nworld\r\n!!!!!!!!!!')
     pause(lcd, interact)
@@ -125,4 +126,3 @@ def main(argv):
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv))
-

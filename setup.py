@@ -15,6 +15,7 @@ setup(
     classifiers=[],
     install_requires=[
         'rplcd',
+        'rpifake',
         'requests',
         'bottle',
         'jsonpickle'
