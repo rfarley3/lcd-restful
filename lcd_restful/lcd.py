@@ -1,12 +1,9 @@
 # coding=utf-8
 from __future__ import print_function
 from RPLCD import CharLCD
+from RPi.GPIO import BCM
 
 from .codec import encode_char
-
-
-BOARD_PIN_MODE = 10
-BCM_PIN_MODE = 11
 
 
 class Lcd(CharLCD):
@@ -14,7 +11,7 @@ class Lcd(CharLCD):
         super(Lcd, self).__init__(
             rows=4,
             cols=20,
-            numbering_mode=BCM_PIN_MODE,
+            numbering_mode=BCM,
             pin_rs=25,    # 4
             pin_rw=None,  # 5
             pin_e=24,     # 6
