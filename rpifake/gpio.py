@@ -3,7 +3,6 @@ class GpioException(BaseException):
 
 
 class Gpio(object):
-    IS_A_FAKE = True  # canary for has_attr
     # https://sourceforge.net/p/raspberry-gpio-python/code/ci/default/tree/source/common.h
     # https://sourceforge.net/p/raspberry-gpio-python/code/ci/default/tree/source/c_gpio.h
     MODE_UNKNOWN = -1
