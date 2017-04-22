@@ -1,12 +1,12 @@
 # LCD RESTful
-A RESTful service to control output on a Hitachi Character Panel LCD. Example 
-tutorial for wiring and driving the LCD can be found 
+A RESTful service to control output on a Hitachi Character Panel LCD such as a 
+HD44780. Example tutorial for wiring and driving the LCD can be found 
 [here](https://learn.adafruit.com/character-lcd-with-raspberry-pi-or-beaglebone-black/usage).
 To facilitate testing, if not on a RPi (or if --fake passed as CLA), this driver 
 will fall back to terminal output.
 
 ## Why
-Serve out the LCD to middleware or any service, even non-localhost, that does 
+Serve out the LCD to middleware or any service, even non-localhost, that can do 
 REST. Have a middleware service poll for updates (some dead drop location like 
 email or dropbox) and then post the results to the server in order for them to 
 show on the LCD exactly how you want them to.
@@ -21,7 +21,9 @@ The [old](find-link) Adafruit wiring used different pins. [Here is a
 ```
 
 ## Install
-Coded for Python3, create a virtualenv:
+Coded for Python3, but tested for compatibility with Python2 before releases. If 
+you don't want to use Py3, then leave off the `-p` flag and arg below.
+Start by creating a virtualenv:
 ```
 mkvirtualenv -p `which python3` lcd
 workon lcd
