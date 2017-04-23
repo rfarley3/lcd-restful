@@ -2,7 +2,11 @@ from __future__ import print_function
 import sys
 
 
+from .gpio import Gpio
+
+
 is_active = False
+FakeGpio = Gpio()
 
 
 # After this function, any futher calls to import RPi.GPIO
@@ -10,18 +14,21 @@ is_active = False
 def patch_fake_gpio():
     import sys
     import mock
-    from .gpio import Gpio as FakeGpio
     global is_active
-    print('Warning, not in RPi, using mock GPIO', file=sys.stderr)
+    print('Overriding RPi.GPIO with fake GPIO', file=sys.stderr)
     # Idea taken from RPLCD who commented it as being from:
     # reddit.com/r/Python/comments/5eddp5/mock_testing_rpigpio
     MockRPi = mock.MagicMock()
-    MockRPi.GPIO = FakeGpio()
+    MockRPi.GPIO = FakeGpio
     modules = {
         'RPi': MockRPi,
         'RPi.GPIO': MockRPi.GPIO,
     }
+    # handles future imports
     sys.modules.update(modules)
+    # previous imports of RPLCD create a GPIO obj
+    # within scope of RPLCD.gpio, this overrides them
+    sys.modules['RPLCD.gpio'].GPIO = FakeGpio
     is_active = True
 
 

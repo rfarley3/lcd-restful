@@ -5,6 +5,10 @@ import sys
 import time
 
 
+from lcd_restful import override_rpigpio
+from lcd_restful.lcd import Lcd
+
+
 def pause(lcd, interact=False):
     if interact:
         input('Press enter for next test')
@@ -22,9 +26,7 @@ def main(argv):
     if '-f' in argv or '--fake' in argv:
         use_fake = True
     if use_fake:
-        from lcd_restful import override_rpigpio
         override_rpigpio()
-    from lcd_restful.lcd import Lcd
     # WARNING double check pin configuration in lcd_restful.lcd
     lcd = Lcd()
     lcd.message('Hello\nworld\r\n!!!!!!!!!!')

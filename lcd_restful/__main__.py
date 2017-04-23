@@ -3,6 +3,10 @@ import sys
 from getopt import getopt, GetoptError
 
 
+from . import override_rpigpio
+from .api import Server
+
+
 USAGE = """\
 Usage %s [-h|--help] [-f|--fake]
 \t-h or --help\tThis help message
@@ -35,9 +39,7 @@ def get_args(args):
 def main_serv(clargs=sys.argv):
     opts = get_args(clargs)
     if opts['fake']:
-        from . import override_rpigpio
         override_rpigpio()
-    from .api import Server
     s = Server()
     s.run()
     return 0
